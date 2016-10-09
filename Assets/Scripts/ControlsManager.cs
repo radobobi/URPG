@@ -178,36 +178,34 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-    private void UpdateLogWindow()
+    private void UpdateLogWindow(int mainPanelWidth, int mainPanelHeight)
     {
-        int midPanelWidth = Screen.width / 2;
-        int midPanelHeight = Screen.height;
-
-        _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, midPanelWidth, 3 * midPanelHeight / 4),
-                    _scrollViewVector, new Rect(0, 0, midPanelWidth, 16 * _logLength));
-        _lastLog = GUI.TextArea(new Rect(0, 0, midPanelWidth, 16 * _logLength), _lastLog);
+        _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, mainPanelWidth, mainPanelHeight),
+                    _scrollViewVector, new Rect(0, 0, mainPanelWidth, 16 * _logLength));
+        _lastLog = GUI.TextArea(new Rect(0, 0, mainPanelWidth, 16 * _logLength), _lastLog);
         GUI.EndScrollView();
     }
 
+    // NOTE: Is it necessary to compute panel sizes at every frame?
 	void OnGUI () {
 		_itemUnderCursorUnclicked = null;
 		
-		//Left Panel (Charactes Panel)
-		int leftPanelWidth = Screen.width / 4;
-		int leftPanelHeight = Screen.height;
-		GUI.BeginGroup (new Rect (0, 0, leftPanelWidth, leftPanelHeight));
+		// Characters Panel (Charactes Panel)
+		int charsPanelWidth = Screen.width / 16;
+		int charsPanelHeight = Screen.height;
+		GUI.BeginGroup (new Rect (Screen.width - charsPanelWidth, 0, charsPanelWidth, charsPanelHeight));
 		for (int i=0; i<=5; ++i)
 		{
-			LeftPanelButtons(i,leftPanelWidth, leftPanelHeight);
+            CharacterPanelButtons(i, charsPanelWidth, charsPanelHeight);
 			//_characters[i].LoadHero(i);
 		}
 		GUI.EndGroup ();
 		
-		//Middle Panel
-		int midPanelWidth = Screen.width / 2;
-		int midPanelHeight = Screen.height;
-		GUI.BeginGroup (new Rect (leftPanelWidth, 0, midPanelWidth, midPanelHeight));
-		GUI.Box (new Rect (0, 0, midPanelWidth, 3*midPanelHeight/4), "MAIN PANEL");
+		// Main Panel
+		int mainPanelWidth = 10 * Screen.width / 16;
+		int mainPanelHeight = 3 * Screen.height / 4;
+		GUI.BeginGroup (new Rect (0, 0, mainPanelWidth, mainPanelHeight));
+		GUI.Box (new Rect (0, 0, mainPanelWidth, mainPanelHeight), "MAP PANEL");
 		
 		switch(_gameMode)
 		{
@@ -224,84 +222,93 @@ public class ControlsManager : MonoBehaviour {
 				{
 				case BattleStatus.Scouting:
 					//GUI.EndScrollView();
-					GUI.Label(new Rect (0, 30, midPanelWidth, 3*midPanelHeight/4), 
+					GUI.Label(new Rect (0, 30, mainPanelWidth, mainPanelHeight), 
 						"Exploring " + _dungeon.MyName + ".");
 					break;
 	
 				case BattleStatus.Engaged:
 					//GUI.EndScrollView();
-					GUI.Label(new Rect (0, 30, midPanelWidth, 3*midPanelHeight/4), 
+					GUI.Label(new Rect (0, 30, mainPanelWidth, mainPanelHeight), 
 						"You have encountered "+_currentBattle.CurrentMob.ToString()+".");
 					break;
 				case BattleStatus.Victorious:
-                    UpdateLogWindow();
+                    UpdateLogWindow(mainPanelWidth, mainPanelHeight);
                     break;
                 case BattleStatus.MidFight:
-                    UpdateLogWindow();
+                    UpdateLogWindow(mainPanelWidth, mainPanelHeight);
                     break;
                 }
 				break;
 			case MiddlePanelType.LootList:
-				MiddlePanelLoot(midPanelWidth, 3*midPanelHeight/4);
+				MainPanelLoot(mainPanelWidth, mainPanelHeight);
 				break;
 			}
 			
 			break;
-		}
-		
-		
+		}	
 		GUI.EndGroup();
-		GUI.BeginGroup(new Rect(leftPanelWidth, 3*midPanelHeight/4, midPanelWidth, midPanelHeight/4));
-		GUI.Box (new Rect (0, 0, midPanelWidth, midPanelHeight/4), "BUTTONS AREA");
-		switch(_gameMode)
-		{
-		case GameMode.Town:
-			MiddlePanelButtonsTown(midPanelWidth, midPanelHeight/4);
-			break;
-			
-		case GameMode.Adventure:
-			MiddlePanelButtonsAdventure(midPanelWidth, midPanelHeight/4);
-			break;
-		}
-		GUI.EndGroup ();
-		
-		//Right Panel
-		int rightPanelWidth = Screen.width / 4;
-		int rightPanelHeight = Screen.height;
-		GUI.BeginGroup (new Rect (leftPanelWidth+midPanelWidth, 0, rightPanelWidth, rightPanelHeight));
-		GUI.Box (new Rect (0, 0, rightPanelWidth, rightPanelHeight), 
+
+        // Log Panel
+        int logPanelWidth = mainPanelWidth;
+        int logPanelHeight = Screen.height / 4;
+        GUI.BeginGroup(new Rect(0, mainPanelHeight, logPanelWidth, logPanelHeight));
+        GUI.Box(new Rect(0, 0, logPanelWidth, logPanelHeight), "LOG PANEL");
+        GUI.EndGroup ();
+
+        // Buttons Panel
+        int buttonPanelWidth = Screen.width / 16;
+        int buttonPanelHeight = Screen.height;
+        GUI.BeginGroup(new Rect(mainPanelWidth, 0, buttonPanelWidth, buttonPanelHeight));
+        GUI.Box(new Rect(0, 0, buttonPanelWidth, buttonPanelHeight), "BUTTONS PANEL");
+        switch (_gameMode)
+        {
+            case GameMode.Town:
+                MiddlePanelButtonsTown(buttonPanelWidth, buttonPanelHeight);
+                break;
+
+            case GameMode.Adventure:
+                ButtonsAdventure(buttonPanelWidth, buttonPanelHeight);
+                break;
+        }
+        GUI.EndGroup();
+
+        // Utility Panel
+        int utilPanelWidth = Screen.width / 4;
+		int utilPanelHeight = Screen.height;
+		GUI.BeginGroup (new Rect (mainPanelWidth + buttonPanelWidth, 0, utilPanelWidth, utilPanelHeight));
+		GUI.Box (new Rect (0, 0, utilPanelWidth, utilPanelHeight), 
 			_selectedCharacter == -1 ? "NO SELECTION" : _characters[_selectedCharacter].MyName);
 		
-		RightPanelButtons(rightPanelWidth,rightPanelHeight);
+		UtilPanelButtons(utilPanelWidth, utilPanelHeight);
 		
 		switch (_rightPanel)
 		{
     		case RightPanelType.CharSheet:
-				GUI.Label (new Rect (0, rightPanelHeight/10, rightPanelWidth, 50), "CHARSHEET");
-				GUI.BeginGroup (new Rect (0, rightPanelHeight/10, rightPanelWidth, 9*rightPanelHeight/10));
-				RightPanelCharSheet(rightPanelWidth, 9*rightPanelHeight/10);
+				GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "CHARSHEET");
+				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9* utilPanelHeight / 10));
+				UtilPanelCharSheet(utilPanelWidth, 9* utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
     		case RightPanelType.Inventory:
-        		GUI.Label (new Rect (0, rightPanelHeight/10, rightPanelWidth, 50), "INVENTORY");
-				GUI.BeginGroup (new Rect (0, rightPanelHeight/10, rightPanelWidth, 9*rightPanelHeight/10));
-				RightPanelInventory(rightPanelWidth, 9*rightPanelHeight/10);
+        		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "INVENTORY");
+				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
+				UtilPanelInventory(utilPanelWidth, 9* utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
 			case RightPanelType.Skills:
-        		GUI.Label (new Rect (0, rightPanelHeight/10, rightPanelWidth, 50), "SKILLS");
-				GUI.BeginGroup (new Rect (0, rightPanelHeight/10, rightPanelWidth, 9*rightPanelHeight/10));
-				RightPanelSkills(rightPanelWidth, 9*rightPanelHeight/10);
+        		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "SKILLS");
+				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
+				UtilPanelSkills(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
     		case RightPanelType.Tactics:
-        		GUI.Label (new Rect (0, rightPanelHeight/10, rightPanelWidth, 50), "TACTICS");
-				GUI.BeginGroup (new Rect (0, rightPanelHeight/10, rightPanelWidth, 9*rightPanelHeight/10));
-				RightPanelTactics(rightPanelWidth, 9*rightPanelHeight/10);
+        		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "TACTICS");
+				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
+				UtilPanelTactics(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;    		
 			case RightPanelType.Statistics:
-        		GUI.Label (new Rect (0, rightPanelHeight/10, rightPanelWidth, 50), "STATS");
+        		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "STATS");
         		break;
 		}
 		
@@ -323,12 +330,15 @@ public class ControlsManager : MonoBehaviour {
 	
 	#endregion
 	
-	#region LeftPanel
+	#region CharacterPanel
 	
-	private void LeftPanelButtons(int i, int panelWidth, int panelHeight)
+	private void CharacterPanelButtons(int i, int panelWidth, int panelHeight)
 	{
-		GUI.BeginGroup (new Rect ((i%2)*(panelWidth/2), (i%3)*(panelHeight/3), panelWidth/2, panelHeight/3));
-		if(GUI.Button (new Rect (0, 0, panelWidth/2, panelHeight/3), "CHARACTER"+i))
+        int horizontalCount = 1;
+        int verticalCount = 6;
+		GUI.BeginGroup (new Rect ((i % horizontalCount) * (panelWidth / horizontalCount), 
+            (i % verticalCount) * (panelHeight / verticalCount), panelWidth / horizontalCount, panelHeight / verticalCount));
+		if(GUI.Button (new Rect (0, 0, panelWidth / horizontalCount, panelHeight / verticalCount), "CHAR"+i))
 		{
 			if(_itemUnderCursor != null)
 			{
@@ -366,7 +376,14 @@ public class ControlsManager : MonoBehaviour {
 	
 	private void MiddlePanelButtonsTown(int panelWidth, int panelHeight)
 	{
-		if(GUI.Button(new Rect(0, 0, panelWidth/3, panelHeight/2), "Embark on an adventure!"))
+        int horizontalCount = 1;
+        int verticalCount = 6;
+
+        // Position 0 button.
+        if (GUI.Button(new Rect(
+            (0 % horizontalCount) * panelWidth / horizontalCount,
+            (0 % verticalCount) * panelHeight / verticalCount, 
+            panelWidth / horizontalCount, panelHeight / verticalCount), "Embark!"))
 		{
 			if(_itemUnderCursor != null)
 			{
@@ -384,11 +401,18 @@ public class ControlsManager : MonoBehaviour {
 	
 	private BattleManager _currentBattle;
 	
-	private void MiddlePanelButtonsAdventure(int panelWidth, int panelHeight)
+	private void ButtonsAdventure(int panelWidth, int panelHeight)
 	{
+        int horizontalCount = 1;
+        int verticalCount = 6;
+
 		if(_battleStatus == BattleStatus.Victorious)
 		{
-			if(GUI.Button(new Rect(0, 0, panelWidth/3, panelHeight/2), "Last Battle Log"))
+            // Position 0 button
+			if(GUI.Button(new Rect(
+                (0 % horizontalCount) * panelWidth / horizontalCount,
+                (0 % verticalCount) * panelHeight / verticalCount,
+                panelWidth / horizontalCount, panelHeight / verticalCount), "Last Battle Log"))
 			{
 				if(_itemUnderCursor != null)
 				{
@@ -400,8 +424,12 @@ public class ControlsManager : MonoBehaviour {
 		
 		switch(_battleStatus)
 		{
-		case BattleStatus.Scouting:	
-			if(GUI.Button(new Rect(0, panelHeight/2, panelWidth/3, panelHeight/2), "Explore"))
+		case BattleStatus.Scouting:
+                // Position 3 button
+                if (GUI.Button(new Rect(
+                    (3 % horizontalCount) * panelWidth / horizontalCount, 
+                    (3 % verticalCount) * panelHeight / verticalCount, 
+                    panelWidth / horizontalCount, panelHeight / verticalCount), "Explore"))
 			{
 				if(_itemUnderCursor != null)
 				{
@@ -420,7 +448,11 @@ public class ControlsManager : MonoBehaviour {
 			
 		case BattleStatus.Engaged:
         case BattleStatus.MidFight:
-			if(GUI.Button(new Rect(0, panelHeight/2, panelWidth/3, panelHeight/2), "Fight"))
+            // Position 0 button.
+			if(GUI.Button(new Rect(
+                (0 % horizontalCount) * panelWidth / horizontalCount,
+                (0 % verticalCount) * panelHeight / verticalCount,
+                panelWidth / horizontalCount, panelHeight / verticalCount), "Fight"))
 			{
 				if(_itemUnderCursor != null)
 				{
@@ -437,7 +469,11 @@ public class ControlsManager : MonoBehaviour {
 			break;
 
 		case BattleStatus.Victorious:
-			if(GUI.Button(new Rect(0, panelHeight/2, panelWidth/3, panelHeight/2), "Proceed"))
+            // Position 3 button.
+            if (GUI.Button(new Rect(
+                (3 % horizontalCount) * panelWidth / horizontalCount,
+                (3 % verticalCount) * panelHeight / verticalCount,
+                panelWidth / horizontalCount, panelHeight / verticalCount), "Proceed"))
 			{
 				if(_itemUnderCursor != null)
 				{
@@ -453,13 +489,21 @@ public class ControlsManager : MonoBehaviour {
 			
 		if(_battleStatus == BattleStatus.Victorious)
 		{
-			if(GUI.Button(new Rect(panelWidth/3, 0, panelWidth/3, panelHeight/2), "Loot"))
+            // Position 4 button.
+			if(GUI.Button(new Rect(
+                (4 % horizontalCount) * panelWidth / horizontalCount,
+                (4 % verticalCount) * panelHeight / verticalCount,
+                panelWidth / horizontalCount, panelHeight / verticalCount), "Loot"))
 			{
 				_middlePanel = MiddlePanelType.LootList;
 			}
 		}
 		
-		if(GUI.Button(new Rect(2*panelWidth/3, panelHeight/2, panelWidth/3, panelHeight/2), "Back to town."))
+        // Position 5 button.
+		if(GUI.Button(new Rect(
+            (5 % horizontalCount) * panelWidth / horizontalCount,
+            (5 % verticalCount) * panelHeight / verticalCount,
+            panelWidth / horizontalCount, panelHeight / verticalCount), "Back to town."))
 		{
 			if(_itemUnderCursor != null)
 			{
@@ -472,7 +516,7 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-	private void MiddlePanelLoot(int panelWidth, int panelHeight)
+	private void MainPanelLoot(int panelWidth, int panelHeight)
 	{
 		int slotWidth = panelWidth/CONSTANTS.LootCols;
 		int slotHeight = panelHeight/(5*CONSTANTS.LootRows);
@@ -571,12 +615,12 @@ public class ControlsManager : MonoBehaviour {
 		
 		
 	}
-	
-	#endregion
-	
-	#region RightPanel
-	
-	private void RightPanelTactics(int panelWidth, int panelHeight)
+
+    #endregion
+
+    #region UtilPanel
+
+    private void UtilPanelTactics(int panelWidth, int panelHeight)
 	{
 		if(_selectedCharacter == -1)
 		{
@@ -594,7 +638,7 @@ public class ControlsManager : MonoBehaviour {
 			"Current Base Position: "+myChar.BasePosition.ToString());
 	}
 			
-	private void RightPanelCharSheet(int panelWidth, int panelHeight)
+	private void UtilPanelCharSheet(int panelWidth, int panelHeight)
 	{
 		if(_selectedCharacter != -1)
 		{
@@ -624,7 +668,7 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-	private void RightPanelInventory(int panelWidth, int panelHeight)
+	private void UtilPanelInventory(int panelWidth, int panelHeight)
 	{
 		if(_selectedCharacter == -1)
 		{
@@ -673,7 +717,7 @@ public class ControlsManager : MonoBehaviour {
 		GUI.EndGroup();
 	}
 	
-	private void RightPanelSkills(int panelWidth, int panelHeight)
+	private void UtilPanelSkills(int panelWidth, int panelHeight)
 	{
 		if(_selectedCharacter == -1)
 		{
@@ -728,7 +772,7 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-	private void RightPanelButtons(int panelWidth, int panelHeight)
+	private void UtilPanelButtons(int panelWidth, int panelHeight)
 	{
 		// Buttons
 		if(GUI.Button (new Rect (0, panelHeight/20, panelWidth/5, panelHeight/20), "CharSheet"))
