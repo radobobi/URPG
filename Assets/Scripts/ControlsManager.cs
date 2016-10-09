@@ -13,7 +13,8 @@ public enum BattleStatus
 	Scouting = 0,
 	Engaged,
 	Victorious,
-	LENGTH
+    MidFight,
+    LENGTH
 }
 
 public enum MiddlePanelType
@@ -228,7 +229,13 @@ public class ControlsManager : MonoBehaviour {
 					_lastLog = GUI.TextArea (new Rect (0, 0, midPanelWidth, 16*_logLength), _lastLog);
 					GUI.EndScrollView();
 					break;
-				}
+                case BattleStatus.MidFight:
+                    _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, midPanelWidth, 3 * midPanelHeight / 4),
+                    _scrollViewVector, new Rect(0, 0, midPanelWidth, 16 * _logLength));
+                    _lastLog = GUI.TextArea(new Rect(0, 0, midPanelWidth, 16 * _logLength), _lastLog);
+                    GUI.EndScrollView();
+                    break;
+                }
 				break;
 			case MiddlePanelType.LootList:
 				MiddlePanelLoot(midPanelWidth, 3*midPanelHeight/4);
@@ -406,19 +413,27 @@ public class ControlsManager : MonoBehaviour {
 			break;
 			
 		case BattleStatus.Engaged:
+        case BattleStatus.MidFight:
 			if(GUI.Button(new Rect(0, panelHeight/2, panelWidth/3, panelHeight/2), "Fight"))
 			{
 				if(_itemUnderCursor != null)
 				{
 					return;	
 				}
-				_currentBattle.ConductBattle();
+                print("battle is starting ");
+				bool battleOver = _currentBattle.ConductBattle();
 				_lastLog = _currentBattle.Log;
 				_logLength = StringLinesCount(_lastLog);
-				_battleStatus = BattleStatus.Victorious;
-				LootListClear();
-				LootListGenerate(Random.Range(0, CONSTANTS.LootSize));
-				Destroy(_currentBattle);
+                //_battleStatus = BattleStatus.MidFight;
+                print("is battle over: " + battleOver);
+                if (battleOver)
+                    {
+                        print("battle is over ");
+                        _battleStatus = BattleStatus.Victorious;
+                        LootListClear();
+                        LootListGenerate(Random.Range(0, CONSTANTS.LootSize));
+                        Destroy(_currentBattle);
+                    }
 			}
 			break;
 

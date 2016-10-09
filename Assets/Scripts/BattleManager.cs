@@ -2,48 +2,84 @@ using UnityEngine;
 using System.Collections;
 
 public class BattleManager : MonoBehaviour {
-	
-	//public GameObject TrashContainer;
-	private GameObject _trashContainer;// = new GameObject();
-	
-	private Hero[] _heroes;
-	private Goon[] _goons;
-	
-	private int _round = 0;
-	
-	private string _log = "";
-	public string Log
-	{
-		get{return _log;}	
+
+    //public GameObject TrashContainer;
+    private GameObject _trashContainer;// = new GameObject();
+
+    private Hero[] _heroes;
+    private Goon[] _goons;
+    private Action[] _heroActions;
+    private Action[] _goonActions;
+    private int[] _heroActionsEnd;
+    private int[] _goonActionsEnd;
+
+    private int _round = 1;
+    private double _gameTimer = 0;
+    private int _roundsPerMin = 6000;
+    private float _roundInterval;
+
+    private string _log = "";
+    public string Log
+    {
+        get { return _log; }
+    }
+
+    private Mob _currentMob;
+    public Mob CurrentMob { get { return _currentMob; } }
+
+    // Use this for initialization
+    void Start() {
+        //trashContainer = new GameObject("TrashContainer");
+    }
+
+    public void RegisterHeroes(Hero[] heroes)
+    {
+        _roundInterval = (float) 60 / (float) _roundsPerMin;
+        //print("interval: " + _roundInterval);
+        _heroes = heroes;
+        _heroActions = new Action[heroes.Length];
+        _heroActionsEnd = new int[heroes.Length];
+        for (int i = 0; i < heroes.Length; i++)
+        {
+            _heroActionsEnd[i] = 0;
+        }
+    }
+
+    public void InitializeBattle(Hero[] heroes)
+    {
+        _heroes = heroes;
+        //SpawnGoons(Random.Range(5,10));
+        SpawnGoons(CONSTANTS.MobGoborcoids);
+    }
+
+    public bool ConductBattle()
+    {
+        print("conducting battle begins ");
+        InvokeRepeating("invokeBattle", 0f, _roundInterval);
+        //while (!GoonsDead(_goons) && !GoonsDead(_heroes))
+        //{
+         //   ConductRound();
+        //}
+        if (GoonsDead(_goons) || GoonsDead(_heroes))
+        {
+            return true;
+        }
+        return false;
 	}
-	
-	private Mob _currentMob;
-	public Mob CurrentMob{get{return _currentMob;}}
-	
-	// Use this for initialization
-	void Start () {
-		//trashContainer = new GameObject("TrashContainer");
-	}
-	
-	public void RegisterHeroes(Hero[] heroes)
-	{
-		_heroes = heroes;
-	}
-	
-	public void InitializeBattle(Hero[] heroes)
-	{
-		_heroes = heroes;
-		//SpawnGoons(Random.Range(5,10));
-		SpawnGoons(CONSTANTS.MobGoborcoids);
-	}
-	
-	public void ConductBattle()
-	{
-		while (!GoonsDead(_goons) && !GoonsDead(_heroes))
-		{
-			ConductRound();	
-		}
-	}
+
+    private void invokeBattle()
+    {
+        if (!GoonsDead(_goons) && !GoonsDead(_heroes))
+        {
+            print("Starting round: " + _round);
+            ConductRound();
+        }
+        else
+        {
+            print("Stopping At round: " + _round);
+            CancelInvoke("invokeBattle");
+        }
+    }
 	
 	// Returns TRUE if all goons are dead
 	private bool GoonsDead(Goon[] pool)
@@ -63,71 +99,188 @@ public class BattleManager : MonoBehaviour {
 	{
 		_log += "\n" + "*** ROUND " + _round + " ***";
 		
-		foreach(Hero hero in _heroes)
-		{
-			ConductActions(hero);
-			if(GoonsDead(_goons))
-			{
-				break;
-			}
-		}
-		
-		foreach(Goon goon in _goons)
-		{
-			ConductActions(goon);
-			if(GoonsDead(_heroes))
-			{
-				// GAME OVER!
-				break;
-			}
-		}
+        for (int i=0; i<_heroes.Length; i++)
+        {
+            if (_round == _heroActionsEnd[i])
+            {
+                //print("hero counter: " + i);
+                executeAction(_heroActions[i]);
+            }
+            if (_round >= _heroActionsEnd[i])
+            {
+                if (GoonsDead(_goons))
+                {
+                    break;
+                }
+                ConductActionsHero(i);
+            }
+        }
+
+        for (int i=0; i<_goons.Length; i++)
+        {
+            if (_round == _goonActionsEnd[i])
+            {
+                executeAction(_goonActions[i]);
+            }
+            if (_round >= _goonActionsEnd[i])
+            {
+                if (GoonsDead(_heroes))
+                {
+                    // GAME OVER!
+                    break;
+                }
+                ConductActionsGoon(i);
+            }
+        }
 		
 		++_round;
 	}
+
+    private void executeAction(Action act)
+    {
+        if (act.getEndTurn() == _round)
+        {
+            Goon acting = act.getActing();
+            Goon target = act.getTarget();
+            switch (act.getSkill())
+            {
+                case Skill.Attack:
+                    if (target.Dead)
+                    {
+                        _log += "\n" + acting.MyName + " tried attacking " + target.MyName + " but it was too late, " + target.MyName + " has already died.";
+                    }
+                    else if (acting.Dead)
+                    {
+
+                    }
+                    else
+                    {
+                        //print("executing attack action of " + acting.MyName);
+                        int hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage);
+                        target.TakeDamage(hitStrength);
+                        _log += "\n" + acting.MyName + " hits " + target.MyName + " for "
+                            + hitStrength + " damage. " + target.CurrentHP + " HP left.";
+                        if (target.Dead)
+                        {
+                            _log += "\n" + target.MyName + " has died.";
+                        }
+                    }
+                    break;
+                case Skill.Heal:
+                    if (target.Dead)
+                    {
+                        _log += "\n" + acting.MyName + " tried healing " + target.MyName + " but it was too late, " + target.MyName + " has already died.";
+                    }
+                    else if (acting.Dead)
+                    {
+
+                    }
+                    else
+                    {
+                        //print("executing heal action of " + acting.MyName);
+                        int healStrength = acting.GetStatSecondary(SecondaryStatType.Compassion);
+                        target.Heal(healStrength);
+                        _log += "\n" + acting.MyName + " heals " + target.MyName + " for "
+                            + healStrength + " HP. " + target.CurrentHP + " HP left.";
+                    }
+                    break;
+            }
+        }
+        else
+        {
+            // Create an Error case
+        }
+    }
 	
-	private void ConductActions(Goon goon)
-	{
-		// Reality check...
-		if(goon.Dead)
+	private void ConductActionsHero(int whichHero)
+    {
+        Hero hero = _heroes[whichHero];
+        // Reality check...
+        if (hero.Dead)
 		{
 			return;	
 		}
 		
 		// choose action
 		Goon target;
-		
-		switch(goon.Skill_1)
+        Action anAction;
+
+        int turnsToAct;
+        switch (hero.Skill_1)
 		{
 		case Skill.Heal:
 			
-			target = ChooseTargetToHeal(goon);
+			target = ChooseTargetToHeal(hero);
 			
-			int healStrength = goon.GetStatSecondary(SecondaryStatType.Compassion);
-			target.Heal(healStrength);
-			_log += "\n" + goon.MyName + " heals " + target.MyName + " for " 
-				+ healStrength + " HP. " + target.CurrentHP + " HP left.";
+            turnsToAct = 60 - hero.GetStatBase(MainStatType.Wisdom) - hero.GetStatBase(MainStatType.Willpower);
+            //print("initiating heal action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Wisdom));
+            anAction = new Action(hero, target, Skill.Heal, _round, _round+turnsToAct);
+            _heroActions[whichHero] = anAction;
+            _heroActionsEnd[whichHero] = _round + turnsToAct;
 			break;
 			
 			
 		case Skill.Attack:
 		
 			// choose target...
-			target = ChooseTargetToAttack(goon);
+			target = ChooseTargetToAttack(hero);
 			
 			//attack or whatever
-			int hitStrength = goon.GetStatSecondary(SecondaryStatType.Damage);
-			target.TakeDamage(hitStrength);
-			_log += "\n" + goon.MyName + " hits " + target.MyName + " for " 
-				+ hitStrength + " damage. " + target.CurrentHP + " HP left.";
-			if(target.Dead)
-			{
-				_log+= "\n" + target.MyName + " has died.";
-			}
+            turnsToAct = 40 - hero.GetStatBase(MainStatType.Agility);
+            //print("initiating attack action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Agility));
+            anAction = new Action(hero, target, Skill.Attack, _round, _round + turnsToAct);
+            //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
+            _heroActions[whichHero] = anAction;
+            _heroActionsEnd[whichHero] = _round + turnsToAct;
 			break;	
 		}
-	}
-	
-	private Goon ChooseTargetToHeal(Goon hero)
+    }
+
+    private void ConductActionsGoon(int whichGoon)
+    {
+        Goon goon = _goons[whichGoon];
+        // Reality check...
+        if (goon.Dead)
+        {
+            return;
+        }
+
+        // choose action
+        Goon target;
+        Action anAction;
+
+        int turnsToAct;
+        switch (goon.Skill_1)
+        {
+            case Skill.Heal:
+
+                target = ChooseTargetToHeal(goon);
+                
+                turnsToAct = 60;
+                anAction = new Action(goon, target, Skill.Heal, _round, _round + turnsToAct);
+                //print("initiating heal action " + goon.MyName);
+                _goonActions[whichGoon] = anAction;
+                _goonActionsEnd[whichGoon] = _round + turnsToAct;
+                break;
+
+
+            case Skill.Attack:
+
+                // choose target...
+                target = ChooseTargetToAttack(goon);
+
+                //attack or whatever
+                turnsToAct = 40;
+                //print("initiating attack action " + goon.MyName);
+                anAction = new Action(goon, target, Skill.Attack, _round, _round + turnsToAct);
+                //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
+                _goonActions[whichGoon] = anAction;
+                _goonActionsEnd[whichGoon] = _round + turnsToAct;
+                break;
+        }
+    }
+
+    private Goon ChooseTargetToHeal(Goon hero)
 	{
 		Goon target = null;
 		Goon[] targetPool = hero is Hero ? _heroes : _goons;
@@ -250,8 +403,14 @@ public class BattleManager : MonoBehaviour {
 				
 				++index;
 			}
-		}
-	}
+        }
+        _goonActions = new Action[_goons.Length];
+        _goonActionsEnd = new int[_goons.Length];
+        for (int i = 0; i < _goons.Length; i++)
+        {
+            _goonActionsEnd[i] = 0;
+        }
+    }
 	
 	private int ArraySum(int[] arr)
 	{

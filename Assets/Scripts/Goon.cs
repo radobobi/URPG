@@ -36,15 +36,21 @@ public class Goon : MonoBehaviour
         {
             _myName = value;
         }
-    }	
+    }
 	
 	protected int[] _secondaryStats = new int[(int) SecondaryStatType.LENGTH];
 	public int GetStatSecondary(SecondaryStatType a)
 	{
-		return _secondaryStats[(int) a];	
-	}
-	
-	protected int _maxHP;
+		return _secondaryStats[(int) a];
+    }
+
+    protected int[] _mainStats = new int[(int)MainStatType.LENGTH];
+    public int GetStatMain(MainStatType a)
+    {
+        return _mainStats[(int)a];
+    }
+
+    protected int _maxHP;
 	public int MaxHP
 	{
 		get{return _maxHP;}	
