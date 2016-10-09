@@ -1,0 +1,6 @@
+BUGS:
+
+UNRESOLVED:
+
+RESOLVED:
+- "Fight" and "Explore" buttons and loot main window precedence issues.

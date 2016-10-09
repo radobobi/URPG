@@ -178,6 +178,17 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
+    private void UpdateLogWindow()
+    {
+        int midPanelWidth = Screen.width / 2;
+        int midPanelHeight = Screen.height;
+
+        _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, midPanelWidth, 3 * midPanelHeight / 4),
+                    _scrollViewVector, new Rect(0, 0, midPanelWidth, 16 * _logLength));
+        _lastLog = GUI.TextArea(new Rect(0, 0, midPanelWidth, 16 * _logLength), _lastLog);
+        GUI.EndScrollView();
+    }
+
 	void OnGUI () {
 		_itemUnderCursorUnclicked = null;
 		
@@ -216,24 +227,17 @@ public class ControlsManager : MonoBehaviour {
 					GUI.Label(new Rect (0, 30, midPanelWidth, 3*midPanelHeight/4), 
 						"Exploring " + _dungeon.MyName + ".");
 					break;
-					
+	
 				case BattleStatus.Engaged:
 					//GUI.EndScrollView();
 					GUI.Label(new Rect (0, 30, midPanelWidth, 3*midPanelHeight/4), 
 						"You have encountered "+_currentBattle.CurrentMob.ToString()+".");
 					break;
-					
 				case BattleStatus.Victorious:
-					_scrollViewVector = GUI.BeginScrollView (new Rect (0, 0, midPanelWidth, 3*midPanelHeight/4), 
-					_scrollViewVector, new Rect (0, 0, midPanelWidth, 16*_logLength));
-					_lastLog = GUI.TextArea (new Rect (0, 0, midPanelWidth, 16*_logLength), _lastLog);
-					GUI.EndScrollView();
-					break;
+                    UpdateLogWindow();
+                    break;
                 case BattleStatus.MidFight:
-                    _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, midPanelWidth, 3 * midPanelHeight / 4),
-                    _scrollViewVector, new Rect(0, 0, midPanelWidth, 16 * _logLength));
-                    _lastLog = GUI.TextArea(new Rect(0, 0, midPanelWidth, 16 * _logLength), _lastLog);
-                    GUI.EndScrollView();
+                    UpdateLogWindow();
                     break;
                 }
 				break;
@@ -403,11 +407,13 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				
+				_middlePanel = MiddlePanelType.BattleLog;
 				_currentBattle = CharactersContainer.AddComponent<BattleManager>();
 				//newBattle.InitializeBattle(_characters);
 				_currentBattle.RegisterHeroes(_characters);
 				_currentBattle.SpawnGoons(_dungeon.GenerateMob());
+                _currentBattle.RegisterWriteToLogDelegate(WriteToLog);
+                _currentBattle.RegisterBattleCleanupCallback(BattleCleanup);
 				_battleStatus = BattleStatus.Engaged;
 			}
 			break;
@@ -420,20 +426,13 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-                print("battle is starting ");
-				bool battleOver = _currentBattle.ConductBattle();
-				_lastLog = _currentBattle.Log;
-				_logLength = StringLinesCount(_lastLog);
-                //_battleStatus = BattleStatus.MidFight;
-                print("is battle over: " + battleOver);
-                if (battleOver)
-                    {
-                        print("battle is over ");
-                        _battleStatus = BattleStatus.Victorious;
-                        LootListClear();
-                        LootListGenerate(Random.Range(0, CONSTANTS.LootSize));
-                        Destroy(_currentBattle);
-                    }
+                //print("battle is starting ");
+                _middlePanel = MiddlePanelType.BattleLog;
+                _currentBattle.ConductBattle();
+				//_lastLog = _currentBattle.Log;
+				//_logLength = StringLinesCount(_lastLog);
+                _battleStatus = BattleStatus.MidFight;
+                //print("is battle over: " + battleOver);
 			}
 			break;
 
@@ -444,7 +443,9 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				
+
+                LootListClear();
+                _middlePanel = MiddlePanelType.BattleLog;
 				_battleStatus = BattleStatus.Scouting;
 			}
 			break;
@@ -880,6 +881,25 @@ public class ControlsManager : MonoBehaviour {
 		
 		return count;
 	}
-	
+
+    public delegate void WriteToLogDelegate(string log);
+    public delegate void BattleCleanupDelegate();
+
+    private void WriteToLog(string log)
+    {
+        _lastLog = log;
+        _logLength = StringLinesCount(_lastLog);
+        //UpdateLogWindow();
+    }
+
+    private void BattleCleanup()
+    {
+        //print("Battle is over.");
+        _battleStatus = BattleStatus.Victorious;
+        LootListClear();
+        LootListGenerate(Random.Range(0, CONSTANTS.LootSize));
+        Destroy(_currentBattle);
+    }
+
 	#endregion
 }

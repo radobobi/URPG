@@ -52,31 +52,24 @@ public class BattleManager : MonoBehaviour {
         SpawnGoons(CONSTANTS.MobGoborcoids);
     }
 
-    public bool ConductBattle()
+    public void ConductBattle()
     {
-        print("conducting battle begins ");
+        //print("Battle begins.");
         InvokeRepeating("invokeBattle", 0f, _roundInterval);
-        //while (!GoonsDead(_goons) && !GoonsDead(_heroes))
-        //{
-         //   ConductRound();
-        //}
-        if (GoonsDead(_goons) || GoonsDead(_heroes))
-        {
-            return true;
-        }
-        return false;
 	}
 
     private void invokeBattle()
     {
         if (!GoonsDead(_goons) && !GoonsDead(_heroes))
         {
-            print("Starting round: " + _round);
+            //print("Starting round: " + _round);
             ConductRound();
+            _logCallback(_log);
         }
         else
         {
-            print("Stopping At round: " + _round);
+            //print("Stopping At round: " + _round);
+            _battleCleanupCallback();
             CancelInvoke("invokeBattle");
         }
     }
@@ -97,7 +90,7 @@ public class BattleManager : MonoBehaviour {
 	
 	private void ConductRound()
 	{
-		_log += "\n" + "*** ROUND " + _round + " ***";
+		_log = "\n" + "*** ROUND " + _round + " ***" + _log;
 		
         for (int i=0; i<_heroes.Length; i++)
         {
@@ -147,7 +140,8 @@ public class BattleManager : MonoBehaviour {
                 case Skill.Attack:
                     if (target.Dead)
                     {
-                        _log += "\n" + acting.MyName + " tried attacking " + target.MyName + " but it was too late, " + target.MyName + " has already died.";
+                        _log = "\n" + acting.MyName + " tried attacking " + target.MyName + " but it was too late, " 
+                            + target.MyName + " has already died." + _log;
                     }
                     else if (acting.Dead)
                     {
@@ -158,18 +152,19 @@ public class BattleManager : MonoBehaviour {
                         //print("executing attack action of " + acting.MyName);
                         int hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage);
                         target.TakeDamage(hitStrength);
-                        _log += "\n" + acting.MyName + " hits " + target.MyName + " for "
-                            + hitStrength + " damage. " + target.CurrentHP + " HP left.";
+                        _log = "\n" + acting.MyName + " hits " + target.MyName + " for "
+                            + hitStrength + " damage. " + target.CurrentHP + " HP left." + _log;
                         if (target.Dead)
                         {
-                            _log += "\n" + target.MyName + " has died.";
+                            _log = "\n" + target.MyName + " has died." + _log;
                         }
                     }
                     break;
                 case Skill.Heal:
                     if (target.Dead)
                     {
-                        _log += "\n" + acting.MyName + " tried healing " + target.MyName + " but it was too late, " + target.MyName + " has already died.";
+                        _log = "\n" + acting.MyName + " tried healing " + target.MyName 
+                            + " but it was too late, " + target.MyName + " has already died." + _log;
                     }
                     else if (acting.Dead)
                     {
@@ -180,8 +175,8 @@ public class BattleManager : MonoBehaviour {
                         //print("executing heal action of " + acting.MyName);
                         int healStrength = acting.GetStatSecondary(SecondaryStatType.Compassion);
                         target.Heal(healStrength);
-                        _log += "\n" + acting.MyName + " heals " + target.MyName + " for "
-                            + healStrength + " HP. " + target.CurrentHP + " HP left.";
+                        _log = "\n" + acting.MyName + " heals " + target.MyName + " for "
+                            + healStrength + " HP. " + target.CurrentHP + " HP left." + _log;
                     }
                     break;
             }
@@ -411,7 +406,20 @@ public class BattleManager : MonoBehaviour {
             _goonActionsEnd[i] = 0;
         }
     }
-	
+
+    private ControlsManager.WriteToLogDelegate _logCallback;
+    private ControlsManager.BattleCleanupDelegate _battleCleanupCallback;
+
+    public void RegisterWriteToLogDelegate(ControlsManager.WriteToLogDelegate logCallback)
+    {
+        _logCallback = logCallback;
+    }
+
+    public void RegisterBattleCleanupCallback(ControlsManager.BattleCleanupDelegate battleCleanupCallback)
+    {
+        _battleCleanupCallback = battleCleanupCallback;
+    }
+
 	private int ArraySum(int[] arr)
 	{
 		int sum = 0;

@@ -65,3 +65,4 @@ public struct Dungeon
 		_mobFrequencies = mobFrequencies;
 	}
 }
+
