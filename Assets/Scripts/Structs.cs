@@ -5,12 +5,12 @@ public struct Enemy
 {
 	private string _myName;
 	public string MyName{get{return _myName;}}
-	private int[] _stats;
-	public int[] Stats{get{return _stats;}}
-	private int _HP;
-	public int HP{get{return _HP;}}
+	private float[] _stats;
+	public float[] Stats{get{return _stats;}}
+	private float _HP;
+	public float HP{get{return _HP;}}
 	
-	public Enemy(string myName, int[] stats, int HP)
+	public Enemy(string myName, float[] stats, float HP)
 	{
 		_myName = myName;
 		_stats = stats;

@@ -617,7 +617,7 @@ public class ControlsManager : MonoBehaviour {
 			start += (skip*((int) MainStatType.LENGTH)+10);
 			for(int i=0; i< (int) SecondaryStatType.LENGTH; ++i)
 			{
-				int secondaryStat = _characters[_selectedCharacter].GetStatSecondary((SecondaryStatType)i);
+				double secondaryStat = _characters[_selectedCharacter].GetStatSecondary((SecondaryStatType)i);
 				GUI.Label (new Rect (0, start+i*skip, panelWidth/2, 50), 
 					((SecondaryStatType)i).ToString() + ": " + secondaryStat);
 			}

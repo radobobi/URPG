@@ -14,8 +14,7 @@ public class BattleManager : MonoBehaviour {
     private int[] _goonActionsEnd;
 
     private int _round = 1;
-    private double _gameTimer = 0;
-    private int _roundsPerMin = 6000;
+    private int _roundsPerMin = 600;
     private float _roundInterval;
 
     private string _log = "";
@@ -39,17 +38,15 @@ public class BattleManager : MonoBehaviour {
         _heroes = heroes;
         _heroActions = new Action[heroes.Length];
         _heroActionsEnd = new int[heroes.Length];
+        float prevHeroSize = 0f;
+        float heroSpacing = 10f;
         for (int i = 0; i < heroes.Length; i++)
         {
             _heroActionsEnd[i] = 0;
+            Hero aHero = heroes[i];
+            aHero.setMyPos(2000f + prevHeroSize + aHero.GetStatSecondary(SecondaryStatType.size) + heroSpacing, 2000f, 0f);
+            prevHeroSize = prevHeroSize + heroSpacing + aHero.GetStatSecondary(SecondaryStatType.size);
         }
-    }
-
-    public void InitializeBattle(Hero[] heroes)
-    {
-        _heroes = heroes;
-        //SpawnGoons(Random.Range(5,10));
-        SpawnGoons(CONSTANTS.MobGoborcoids);
     }
 
     public void ConductBattle()
@@ -94,6 +91,7 @@ public class BattleManager : MonoBehaviour {
 		
         for (int i=0; i<_heroes.Length; i++)
         {
+            //print("Hero " + _heroes[i].MyName + " Position " + _heroes[i].MyPos);
             if (_round == _heroActionsEnd[i])
             {
                 //print("hero counter: " + i);
@@ -111,6 +109,7 @@ public class BattleManager : MonoBehaviour {
 
         for (int i=0; i<_goons.Length; i++)
         {
+            //print("Goon " + _goons[i].MyName + " Position " + _goons[i].MyPos);
             if (_round == _goonActionsEnd[i])
             {
                 executeAction(_goonActions[i]);
@@ -150,7 +149,7 @@ public class BattleManager : MonoBehaviour {
                     else
                     {
                         //print("executing attack action of " + acting.MyName);
-                        int hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage);
+                        float hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage);
                         target.TakeDamage(hitStrength);
                         _log = "\n" + acting.MyName + " hits " + target.MyName + " for "
                             + hitStrength + " damage. " + target.CurrentHP + " HP left." + _log;
@@ -173,7 +172,7 @@ public class BattleManager : MonoBehaviour {
                     else
                     {
                         //print("executing heal action of " + acting.MyName);
-                        int healStrength = acting.GetStatSecondary(SecondaryStatType.Compassion);
+                        float healStrength = acting.GetStatSecondary(SecondaryStatType.Compassion);
                         target.Heal(healStrength);
                         _log = "\n" + acting.MyName + " heals " + target.MyName + " for "
                             + healStrength + " HP. " + target.CurrentHP + " HP left." + _log;
@@ -199,35 +198,59 @@ public class BattleManager : MonoBehaviour {
 		// choose action
 		Goon target;
         Action anAction;
+        float dist;
 
         int turnsToAct;
         switch (hero.Skill_1)
 		{
-		case Skill.Heal:
+		    case Skill.Heal:
 			
-			target = ChooseTargetToHeal(hero);
+			    target = ChooseTargetToHeal(hero);
+                dist = Vector3.Distance(hero.MyPos, target.MyPos);
+                if (dist <= hero.GetStatSecondary(SecondaryStatType.range))
+                {
+                    turnsToAct = 60 - hero.GetStatBase(MainStatType.Wisdom) - hero.GetStatBase(MainStatType.Willpower);
+                    //print("initiating heal action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Wisdom));
+                    anAction = new Action(hero, target, Skill.Heal, _round, _round + turnsToAct);
+                    _heroActions[whichHero] = anAction;
+                    _heroActionsEnd[whichHero] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    hero.setMyPos(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                }
+            
+			    break;
 			
-            turnsToAct = 60 - hero.GetStatBase(MainStatType.Wisdom) - hero.GetStatBase(MainStatType.Willpower);
-            //print("initiating heal action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Wisdom));
-            anAction = new Action(hero, target, Skill.Heal, _round, _round+turnsToAct);
-            _heroActions[whichHero] = anAction;
-            _heroActionsEnd[whichHero] = _round + turnsToAct;
-			break;
 			
-			
-		case Skill.Attack:
+		    case Skill.Attack:
 		
-			// choose target...
-			target = ChooseTargetToAttack(hero);
-			
-			//attack or whatever
-            turnsToAct = 40 - hero.GetStatBase(MainStatType.Agility);
-            //print("initiating attack action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Agility));
-            anAction = new Action(hero, target, Skill.Attack, _round, _round + turnsToAct);
-            //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
-            _heroActions[whichHero] = anAction;
-            _heroActionsEnd[whichHero] = _round + turnsToAct;
-			break;	
+			    // choose target...
+			    target = ChooseTargetToAttack(hero);
+                dist = Vector3.Distance(hero.MyPos, target.MyPos);
+                if (dist <= hero.GetStatSecondary(SecondaryStatType.range))
+                {
+                    //attack or whatever
+                    turnsToAct = 40 - hero.GetStatBase(MainStatType.Agility);
+                    //print("initiating attack action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Agility));
+                    anAction = new Action(hero, target, Skill.Attack, _round, _round + turnsToAct);
+                    //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
+                    _heroActions[whichHero] = anAction;
+                    _heroActionsEnd[whichHero] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    //Vector3 prevPos = hero.MyPos;
+                    hero.setMyPos(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                    //print("Hero " + hero.MyName + " moves from " + prevPos + " to " + hero.MyPos + " with ratio " + ratio + " with target " + target.MyPos);
+                }
+
+                
+			    break;	
 		}
     }
 
@@ -243,6 +266,7 @@ public class BattleManager : MonoBehaviour {
         // choose action
         Goon target;
         Action anAction;
+        float dist;
 
         int turnsToAct;
         switch (goon.Skill_1)
@@ -250,27 +274,51 @@ public class BattleManager : MonoBehaviour {
             case Skill.Heal:
 
                 target = ChooseTargetToHeal(goon);
-                
-                turnsToAct = 60;
-                anAction = new Action(goon, target, Skill.Heal, _round, _round + turnsToAct);
-                //print("initiating heal action " + goon.MyName);
-                _goonActions[whichGoon] = anAction;
-                _goonActionsEnd[whichGoon] = _round + turnsToAct;
+                dist = Vector3.Distance(goon.MyPos, target.MyPos);
+                if (dist <= goon.GetStatSecondary(SecondaryStatType.range))
+                {
+                    turnsToAct = 60;
+                    anAction = new Action(goon, target, Skill.Heal, _round, _round + turnsToAct);
+                    //print("initiating heal action " + goon.MyName);
+                    _goonActions[whichGoon] = anAction;
+                    _goonActionsEnd[whichGoon] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    goon.setMyPos(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x)*ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
+                }
                 break;
+
+
 
 
             case Skill.Attack:
 
                 // choose target...
                 target = ChooseTargetToAttack(goon);
+                dist = Vector3.Distance(goon.MyPos, target.MyPos);
+                if (dist <= goon.GetStatSecondary(SecondaryStatType.range))
+                {
+                    //attack or whatever
+                    turnsToAct = 40;
+                    //print("initiating attack action " + goon.MyName);
+                    anAction = new Action(goon, target, Skill.Attack, _round, _round + turnsToAct);
+                    //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
+                    _goonActions[whichGoon] = anAction;
+                    _goonActionsEnd[whichGoon] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    //Vector3 prevPos = goon.MyPos;
+                    goon.setMyPos(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
+                    //print("goon " + goon.MyName + " moves from " + prevPos + " to " + goon.MyPos + " with ratio " + ratio + " with target " + target.MyPos);
+                }
 
-                //attack or whatever
-                turnsToAct = 40;
-                //print("initiating attack action " + goon.MyName);
-                anAction = new Action(goon, target, Skill.Attack, _round, _round + turnsToAct);
-                //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
-                _goonActions[whichGoon] = anAction;
-                _goonActionsEnd[whichGoon] = _round + turnsToAct;
+
                 break;
         }
     }
@@ -287,8 +335,10 @@ public class BattleManager : MonoBehaviour {
 	{
 		Goon target = null;
 		Goon[] targetPool = hero is Hero ? _goons : _heroes;
-		
-		switch(hero.TargetSelection)
+        
+        target = SelectClosestEnemy(hero, targetPool);
+
+        /*switch(hero.TargetSelection)
 		{
 		case TacticsTargetSelection.Random_Target:
 			target = SelectRandomGoon(targetPool);
@@ -300,10 +350,28 @@ public class BattleManager : MonoBehaviour {
 		case TacticsTargetSelection.Lowest_Max_HP:
 			target = FindLowestMaxHPGoon(targetPool);
 			break;
-		}
-			
-		return target;
+		}*/
+        return target;
 	}
+
+    private Goon SelectClosestEnemy(Goon unit, Goon[] enemies)
+    {
+        int target = 0;
+        float closestDist = 5000f;
+
+        for (int i=0; i<enemies.Length; i++)
+        {
+            float dist = Vector3.Distance(unit.MyPos, enemies[i].MyPos) - enemies[i].GetStatSecondary(SecondaryStatType.size);
+            if (dist < closestDist && !enemies[i].Dead)
+            {
+                target = i;
+                closestDist = dist;
+            }
+            //print("Distance between " + unit.MyPos + " and " + enemies[i].MyPos + " is: " + dist);
+        }
+
+        return enemies[target];
+    }
 	
 	private Goon SelectRandomGoon(Goon[] targetPool)
 	{
@@ -326,7 +394,7 @@ public class BattleManager : MonoBehaviour {
 	private Goon FindLowestCurrentHPGoon(Goon[] targetPool)
 	{
 		Goon current = null;
-		int currentLowestHP = -1;
+        float currentLowestHP = -1;
 		foreach (Goon goon in targetPool)
 		{
 			if(!goon.Dead)
@@ -345,7 +413,7 @@ public class BattleManager : MonoBehaviour {
 	private Goon FindLowestMaxHPGoon(Goon[] targetPool)
 	{
 		Goon current = null;
-		int currentLowestHP = -1;
+        float currentLowestHP = -1;
 		foreach (Goon goon in targetPool)
 		{
 			if(!goon.Dead)
@@ -392,7 +460,7 @@ public class BattleManager : MonoBehaviour {
 			for(int j=0; j<counts[i]; ++j)
 			{
 				_goons[index] = _trashContainer.AddComponent<Goon>();	
-				int currentHP = current.HP;
+				float currentHP = current.HP;
 				_goons[index].SetMainStats(current.MyName+" "+j, 
 					currentHP+Random.Range(-currentHP/4,currentHP/4), current.Stats);
 				
@@ -404,6 +472,9 @@ public class BattleManager : MonoBehaviour {
         for (int i = 0; i < _goons.Length; i++)
         {
             _goonActionsEnd[i] = 0;
+            Goon aGoon = _goons[i];
+            float randAngle = Random.Range(0f, Mathf.PI);
+            aGoon.setMyPos(2054f + Mathf.Cos(randAngle)*1000, 2000f + Mathf.Sin(randAngle) * 1000, 0f);
         }
     }
 
