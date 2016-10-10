@@ -137,7 +137,7 @@ public class Hero : Goon {
 		_secondaryStats[(int) SecondaryStatType.Compassion] = (float)_mainStatsActive[(int) MainStatType.Piety];
         _secondaryStats[(int) SecondaryStatType.moveSpeed] = ((float)_mainStatsActive[(int)MainStatType.Agility])*10;
         _secondaryStats[(int) SecondaryStatType.range] = 600f;
-        _secondaryStats[(int) SecondaryStatType.size] = ((float) _mainStatsActive[(int)MainStatType.Strength])/2;
+        _secondaryStats[(int) SecondaryStatType.size] = (float) CONSTANTS.BaseUnitRadius;
 
         _maxHP = 5*_mainStatsActive[(int) MainStatType.Vitality];
 		if(_currentHP <= 0)
