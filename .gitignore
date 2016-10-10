@@ -1,6 +1,10 @@
-Library/metadata/
 Temp/
-Library/LastSceneManagerSetup.txt
-Library/assetDatabase3
-Library/CurrentLayout.dwlt
-Library/expandedItems
+Library/
+Obj/
+*.csproj
+*.unityproj
+*.sln
+*.user
+*.userprefs
+*.DS_store
+Library/shadercompiler-UnityShaderCompiler.exe0.log
