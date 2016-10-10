@@ -54,27 +54,29 @@ public class ControlsManager : MonoBehaviour {
 	public GameObject ItemsContainer;
 	
 	private GameMode _gameMode = GameMode.Town;
-	// LEFT PANEL
+	// CHARACTERS PANEL
 	private Hero[] _characters = new Hero[6];
 	
 	private int _selectedCharacter = -1;
 	
-	// MIDDLE PANEL
+	// MAIN PANEL
 	private MiddlePanelType _mainPanel = MiddlePanelType.BattleLog;
 	private string _lastLog = "";
 	private int _logLength=0;
 	
 	private Vector2 _scrollViewVector = Vector2.zero;
 	
-	// RIGHT PANEL
+	// UTILITY PANEL
 		// Inventory Window
 	private RightPanelType _rightPanel = RightPanelType.CharSheet;
 	
 	private Texture[] _itemTextures = new Texture[(int) ItemType.LENGTH];
-	private Texture2D _invRagdoll;// = Resources.Load("InvBody") as Texture;
-	
+	private Texture2D _invRagdoll;// = Resources.Load("InvBody") as Texture
+
 	private ItemManager _itemUnderCursor;
-	
+
+    private Texture[] _charTextures = new Texture[(int) GoonSprites.LENGTH];
+
 
 		// Skills Window
 	private GUIContent[] _skills_1_List;
@@ -110,9 +112,13 @@ public class ControlsManager : MonoBehaviour {
 		//Initialize item icons
 		for (int i=0; i< (int) ItemType.LENGTH; ++i)
 		{
-			_itemTextures[i] = Resources.Load(((ItemType)i).ToString()+" Icon") as Texture;	
+			_itemTextures[i] = Resources.Load(((ItemType)i).ToString() + " Icon") as Texture;	
 		}
-		_invRagdoll = Resources.Load("InvBody") as Texture2D;
+        for (int i = 0; i < (int)GoonSprites.LENGTH; ++i)
+        {
+            _charTextures[i] = Resources.Load(((GoonSprites)i).ToString()) as Texture2D;
+        }
+        _invRagdoll = Resources.Load("InvBody") as Texture2D;
 		_background = Resources.Load("MenuBox") as Texture;
 		
 		_listStyle.normal.textColor = Color.white; 
@@ -186,8 +192,27 @@ public class ControlsManager : MonoBehaviour {
         GUI.EndScrollView();
     }
 
+    private void UpdateBattleWindow(int panelWidth, int panelHeight)
+    {
+        float mapLength = 4000;
+        float unit_radius = 32;
+
+        foreach(Goon goon in _currentBattle.GetGoonsList())
+        {
+            GUI.Label(new Rect(panelWidth * goon.MyPos.x / mapLength - unit_radius / 2, 
+                panelHeight * goon.MyPos.y / mapLength - unit_radius / 2, unit_radius, unit_radius), 
+                _charTextures[!goon.Dead ? (int)GoonSprites.goon_base : (int)GoonSprites.goon_dead]);
+        }
+        foreach (Hero hero in _currentBattle.GetHeroesList())
+        { 
+            GUI.Label(new Rect(panelWidth * hero.MyPos.x / mapLength - unit_radius / 2, 
+                panelHeight * hero.MyPos.y / mapLength - unit_radius / 2, unit_radius, unit_radius), 
+                _charTextures[!hero.Dead ? (int)GoonSprites.hero_base : (int)GoonSprites.hero_dead]);
+        }
+    }
+
     // NOTE: Is it necessary to compute panel sizes at every frame?
-	void OnGUI () {
+    void OnGUI () {
 		_itemUnderCursorUnclicked = null;
 		
 		// Characters Panel (Charactes Panel)
@@ -209,12 +234,10 @@ public class ControlsManager : MonoBehaviour {
 		
 		switch(_gameMode)
 		{
-		case GameMode.Town:
-			
+		case GameMode.Town:		
 			break;
 			
-		case GameMode.Adventure:
-			
+		case GameMode.Adventure:		
 			switch(_mainPanel)
 			{
 			case MiddlePanelType.BattleLog:
@@ -231,14 +254,14 @@ public class ControlsManager : MonoBehaviour {
 					GUI.Label(new Rect (0, 30, mainPanelWidth, mainPanelHeight), 
 						"You have encountered " + _currentBattle.CurrentMob.ToString()+".");
 					break;
-                    /*
+                    
 				case BattleStatus.Victorious:
-                    UpdateLogWindow(mainPanelWidth, mainPanelHeight);
+                    //UpdateLogWindow(mainPanelWidth, mainPanelHeight);
                     break;
                 case BattleStatus.MidFight:
-                    UpdateLogWindow(mainPanelWidth, mainPanelHeight);
+                    UpdateBattleWindow(mainPanelWidth, mainPanelHeight);
                     break;
-                    */
+                    
                 }
 				break;
 			case MiddlePanelType.LootList:
@@ -411,10 +434,10 @@ public class ControlsManager : MonoBehaviour {
 
 		if(_battleStatus == BattleStatus.Victorious)
 		{
-            // Position 0 button
+            // Position 3 button
 			if(GUI.Button(new Rect(
-                (0 % horizontalCount) * panelWidth / horizontalCount,
-                (0 % verticalCount) * panelHeight / verticalCount,
+                (3 % horizontalCount) * panelWidth / horizontalCount,
+                (3 % verticalCount) * panelHeight / verticalCount,
                 panelWidth / horizontalCount, panelHeight / verticalCount), "Last Battle Log"))
 			{
 				if(_itemUnderCursor != null)
@@ -428,10 +451,10 @@ public class ControlsManager : MonoBehaviour {
 		switch(_battleStatus)
 		{
 		case BattleStatus.Scouting:
-                // Position 3 button
+                // Position 0 button
                 if (GUI.Button(new Rect(
-                    (3 % horizontalCount) * panelWidth / horizontalCount, 
-                    (3 % verticalCount) * panelHeight / verticalCount, 
+                    (0 % horizontalCount) * panelWidth / horizontalCount, 
+                    (0 % verticalCount) * panelHeight / verticalCount, 
                     panelWidth / horizontalCount, panelHeight / verticalCount), "Explore"))
 			{
 				if(_itemUnderCursor != null)
@@ -472,10 +495,10 @@ public class ControlsManager : MonoBehaviour {
 			break;
 
 		case BattleStatus.Victorious:
-            // Position 3 button.
+            // Position 0 button.
             if (GUI.Button(new Rect(
-                (3 % horizontalCount) * panelWidth / horizontalCount,
-                (3 % verticalCount) * panelHeight / verticalCount,
+                (0 % horizontalCount) * panelWidth / horizontalCount,
+                (0 % verticalCount) * panelHeight / verticalCount,
                 panelWidth / horizontalCount, panelHeight / verticalCount), "Proceed"))
 			{
 				if(_itemUnderCursor != null)

@@ -1,12 +1,21 @@
 using UnityEngine;
 using System.Collections;
 	
+public enum GoonSprites
+{
+    hero_base = 0,
+    hero_dead,
+    goon_base,
+    goon_dead,
+    LENGTH
+}
+
 public enum TacticsTargetSelection
 {
 	Random_Target = 0,
 	Lowest_Current_HP,
 	Lowest_Max_HP,
-	LENGTH,
+	LENGTH
 }
 
 public enum TacticsBasePosition
