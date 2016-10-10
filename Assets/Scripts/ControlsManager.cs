@@ -195,18 +195,22 @@ public class ControlsManager : MonoBehaviour {
     private void UpdateBattleWindow(int panelWidth, int panelHeight)
     {
         float mapLength = 4000;
-        float unit_radius = 32;
+        float unit_radius = CONSTANTS.BaseUnitRadius;
 
         foreach(Goon goon in _currentBattle.GetGoonsList())
         {
-            GUI.Label(new Rect(panelWidth * goon.MyPos.x / mapLength - unit_radius / 2, 
-                panelHeight * goon.MyPos.y / mapLength - unit_radius / 2, unit_radius, unit_radius), 
+            GUI.Label(new Rect(panelWidth * goon.MyPos.x / mapLength - goon.GetStatSecondary(SecondaryStatType.size) / 2, 
+                panelHeight * goon.MyPos.y / mapLength - goon.GetStatSecondary(SecondaryStatType.size) / 2, 
+                goon.GetStatSecondary(SecondaryStatType.size), 
+                goon.GetStatSecondary(SecondaryStatType.size)), 
                 _charTextures[!goon.Dead ? (int)GoonSprites.goon_base : (int)GoonSprites.goon_dead]);
         }
         foreach (Hero hero in _currentBattle.GetHeroesList())
         { 
-            GUI.Label(new Rect(panelWidth * hero.MyPos.x / mapLength - unit_radius / 2, 
-                panelHeight * hero.MyPos.y / mapLength - unit_radius / 2, unit_radius, unit_radius), 
+            GUI.Label(new Rect(panelWidth * hero.MyPos.x / mapLength - hero.GetStatSecondary(SecondaryStatType.size) / 2, 
+                panelHeight * hero.MyPos.y / mapLength - hero.GetStatSecondary(SecondaryStatType.size) / 2,
+                hero.GetStatSecondary(SecondaryStatType.size),
+                hero.GetStatSecondary(SecondaryStatType.size)), 
                 _charTextures[!hero.Dead ? (int)GoonSprites.hero_base : (int)GoonSprites.hero_dead]);
         }
     }
@@ -256,7 +260,7 @@ public class ControlsManager : MonoBehaviour {
 					break;
                     
 				case BattleStatus.Victorious:
-                    //UpdateLogWindow(mainPanelWidth, mainPanelHeight);
+                    UpdateBattleWindow(mainPanelWidth, mainPanelHeight);
                     break;
                 case BattleStatus.MidFight:
                     UpdateBattleWindow(mainPanelWidth, mainPanelHeight);
