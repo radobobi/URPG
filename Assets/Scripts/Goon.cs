@@ -60,16 +60,6 @@ public class Goon : MonoBehaviour
         }
     }
 
-    public void setMyPos(Vector3 aPos)
-    {
-        _myPos = aPos;
-    }
-
-    public void setMyPos(float xPos, float yPos, float zPos)
-    {
-        _myPos = new Vector3(xPos, yPos, zPos);
-    }
-
     protected float[] _secondaryStats = new float[(int) SecondaryStatType.LENGTH];
 	public float GetStatSecondary(SecondaryStatType a)
 	{

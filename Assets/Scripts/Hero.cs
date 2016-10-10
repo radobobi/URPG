@@ -135,7 +135,7 @@ public class Hero : Goon {
 		_secondaryStats[(int) SecondaryStatType.HandToHand] = (float)_mainStatsActive[(int) MainStatType.Agility];
 		_secondaryStats[(int) SecondaryStatType.Block] = (float)_mainStatsActive[(int) MainStatType.Guile];
 		_secondaryStats[(int) SecondaryStatType.Compassion] = (float)_mainStatsActive[(int) MainStatType.Piety];
-        _secondaryStats[(int) SecondaryStatType.moveSpeed] = ((float)_mainStatsActive[(int)MainStatType.Agility])*10;
+        _secondaryStats[(int) SecondaryStatType.moveSpeed] = ((float)_mainStatsActive[(int)MainStatType.Agility]);
         _secondaryStats[(int) SecondaryStatType.range] = 600f;
         _secondaryStats[(int) SecondaryStatType.size] = ((float) _mainStatsActive[(int)MainStatType.Strength])/2;
 
