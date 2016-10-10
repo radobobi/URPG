@@ -7,7 +7,15 @@ public class BattleManager : MonoBehaviour {
     private GameObject _trashContainer;// = new GameObject();
 
     private Hero[] _heroes;
+    public Hero[] GetHeroesList()
+    {
+        return _heroes;
+    }
     private Goon[] _goons;
+    public Goon[] GetGoonsList()
+    {
+        return _goons;
+    }
     private Action[] _heroActions;
     private Action[] _goonActions;
     private int[] _heroActionsEnd;
