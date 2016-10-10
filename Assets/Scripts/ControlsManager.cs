@@ -60,7 +60,7 @@ public class ControlsManager : MonoBehaviour {
 	private int _selectedCharacter = -1;
 	
 	// MIDDLE PANEL
-	private MiddlePanelType _middlePanel = MiddlePanelType.BattleLog;
+	private MiddlePanelType _mainPanel = MiddlePanelType.BattleLog;
 	private string _lastLog = "";
 	private int _logLength=0;
 	
@@ -178,11 +178,11 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-    private void UpdateLogWindow(int mainPanelWidth, int mainPanelHeight)
+    private void UpdateLogWindow(int logPanelWidth, int logPanelHeight)
     {
-        _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, mainPanelWidth, mainPanelHeight),
-                    _scrollViewVector, new Rect(0, 0, mainPanelWidth, 16 * _logLength));
-        _lastLog = GUI.TextArea(new Rect(0, 0, mainPanelWidth, 16 * _logLength), _lastLog);
+        _scrollViewVector = GUI.BeginScrollView(new Rect(0, 0, logPanelWidth, logPanelHeight),
+                    _scrollViewVector, new Rect(0, 0, logPanelWidth, 16 * _logLength));
+        _lastLog = GUI.TextArea(new Rect(0, 0, logPanelWidth, 16 * _logLength), _lastLog);
         GUI.EndScrollView();
     }
 
@@ -215,7 +215,7 @@ public class ControlsManager : MonoBehaviour {
 			
 		case GameMode.Adventure:
 			
-			switch(_middlePanel)
+			switch(_mainPanel)
 			{
 			case MiddlePanelType.BattleLog:
 				switch(_battleStatus)
@@ -229,14 +229,16 @@ public class ControlsManager : MonoBehaviour {
 				case BattleStatus.Engaged:
 					//GUI.EndScrollView();
 					GUI.Label(new Rect (0, 30, mainPanelWidth, mainPanelHeight), 
-						"You have encountered "+_currentBattle.CurrentMob.ToString()+".");
+						"You have encountered " + _currentBattle.CurrentMob.ToString()+".");
 					break;
+                    /*
 				case BattleStatus.Victorious:
                     UpdateLogWindow(mainPanelWidth, mainPanelHeight);
                     break;
                 case BattleStatus.MidFight:
                     UpdateLogWindow(mainPanelWidth, mainPanelHeight);
                     break;
+                    */
                 }
 				break;
 			case MiddlePanelType.LootList:
@@ -253,6 +255,7 @@ public class ControlsManager : MonoBehaviour {
         int logPanelHeight = Screen.height / 4;
         GUI.BeginGroup(new Rect(0, mainPanelHeight, logPanelWidth, logPanelHeight));
         GUI.Box(new Rect(0, 0, logPanelWidth, logPanelHeight), "LOG PANEL");
+        UpdateLogWindow(logPanelWidth, logPanelHeight);
         GUI.EndGroup ();
 
         // Buttons Panel
@@ -418,7 +421,7 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				_middlePanel = MiddlePanelType.BattleLog;
+				_mainPanel = MiddlePanelType.BattleLog;
 			}
 		}
 		
@@ -435,7 +438,7 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				_middlePanel = MiddlePanelType.BattleLog;
+				_mainPanel = MiddlePanelType.BattleLog;
 				_currentBattle = CharactersContainer.AddComponent<BattleManager>();
 				//newBattle.InitializeBattle(_characters);
 				_currentBattle.RegisterHeroes(_characters);
@@ -459,7 +462,7 @@ public class ControlsManager : MonoBehaviour {
 					return;	
 				}
                 //print("battle is starting ");
-                _middlePanel = MiddlePanelType.BattleLog;
+                _mainPanel = MiddlePanelType.BattleLog;
                 _currentBattle.ConductBattle();
 				//_lastLog = _currentBattle.Log;
 				//_logLength = StringLinesCount(_lastLog);
@@ -481,7 +484,7 @@ public class ControlsManager : MonoBehaviour {
 				}
 
                 LootListClear();
-                _middlePanel = MiddlePanelType.BattleLog;
+                _mainPanel = MiddlePanelType.BattleLog;
 				_battleStatus = BattleStatus.Scouting;
 			}
 			break;
@@ -495,7 +498,7 @@ public class ControlsManager : MonoBehaviour {
                 (4 % verticalCount) * panelHeight / verticalCount,
                 panelWidth / horizontalCount, panelHeight / verticalCount), "Loot"))
 			{
-				_middlePanel = MiddlePanelType.LootList;
+				_mainPanel = MiddlePanelType.LootList;
 			}
 		}
 		
