@@ -37,9 +37,32 @@ public class Goon : MonoBehaviour
             _myName = value;
         }
     }
-	
-	protected int[] _secondaryStats = new int[(int) SecondaryStatType.LENGTH];
-	public int GetStatSecondary(SecondaryStatType a)
+
+    protected Vector3 _myPos;
+    public Vector3 MyPos
+    {
+        get
+        {
+            return _myPos;
+        }
+        set
+        {
+            _myPos = value;
+        }
+    }
+
+    public void setMyPos(Vector3 aPos)
+    {
+        _myPos = aPos;
+    }
+
+    public void setMyPos(float xPos, float yPos, float zPos)
+    {
+        _myPos = new Vector3(xPos, yPos, zPos);
+    }
+
+    protected float[] _secondaryStats = new float[(int) SecondaryStatType.LENGTH];
+	public float GetStatSecondary(SecondaryStatType a)
 	{
 		return _secondaryStats[(int) a];
     }
@@ -50,14 +73,14 @@ public class Goon : MonoBehaviour
         return _mainStats[(int)a];
     }
 
-    protected int _maxHP;
-	public int MaxHP
+    protected float _maxHP;
+	public float MaxHP
 	{
 		get{return _maxHP;}	
 	}
 	
-	protected int _currentHP = 0;
-	public int CurrentHP
+	protected float _currentHP = 0;
+	public float CurrentHP
 	{
 		get{return _currentHP;}	
 	}
@@ -69,9 +92,9 @@ public class Goon : MonoBehaviour
 	}
 	
 	// Returns actual damage taken
-	public int TakeDamage(int dmg)
+	public float TakeDamage(float dmg)
 	{
-		int hitStrength = Mathf.Max(dmg - _secondaryStats[(int) SecondaryStatType.Block],1);
+        float hitStrength = Mathf.Max(dmg - _secondaryStats[(int) SecondaryStatType.Block],1);
 		_currentHP -= hitStrength;	
 		if(_currentHP <= 0)
 		{
@@ -81,7 +104,7 @@ public class Goon : MonoBehaviour
 		return hitStrength;
 	}
 	
-	public void Heal(int pts)
+	public void Heal(float pts)
 	{
 		_currentHP = Mathf.Min(_currentHP+pts, _maxHP);	
 	}
@@ -107,7 +130,7 @@ public class Goon : MonoBehaviour
 		set{_skill_1 = value;}
 	}
 	
-	public void SetMainStats (string name, int HP, int[] secondaryStats)
+	public void SetMainStats (string name, float HP, float[] secondaryStats)
 	{
 		_myName = name;
 		_maxHP = HP;

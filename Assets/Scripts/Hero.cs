@@ -33,6 +33,9 @@ public enum SecondaryStatType
 	HandToHand,
 	Block,
 	Compassion,
+    moveSpeed,
+    range,
+    size,
 	LENGTH,
 }
 
@@ -128,12 +131,15 @@ public class Hero : Goon {
 			_mainStatsActive[i] = _mainStatsBase[i];	
 		}
 		
-		_secondaryStats[(int) SecondaryStatType.Damage] = _mainStatsActive[(int) MainStatType.Strength];
-		_secondaryStats[(int) SecondaryStatType.HandToHand] = _mainStatsActive[(int) MainStatType.Agility];
-		_secondaryStats[(int) SecondaryStatType.Block] = _mainStatsActive[(int) MainStatType.Guile];
-		_secondaryStats[(int) SecondaryStatType.Compassion] = _mainStatsActive[(int) MainStatType.Piety];
-		
-		_maxHP = 5*_mainStatsActive[(int) MainStatType.Vitality];
+		_secondaryStats[(int) SecondaryStatType.Damage] = (float)_mainStatsActive[(int) MainStatType.Strength];
+		_secondaryStats[(int) SecondaryStatType.HandToHand] = (float)_mainStatsActive[(int) MainStatType.Agility];
+		_secondaryStats[(int) SecondaryStatType.Block] = (float)_mainStatsActive[(int) MainStatType.Guile];
+		_secondaryStats[(int) SecondaryStatType.Compassion] = (float)_mainStatsActive[(int) MainStatType.Piety];
+        _secondaryStats[(int) SecondaryStatType.moveSpeed] = ((float)_mainStatsActive[(int)MainStatType.Agility])*10;
+        _secondaryStats[(int) SecondaryStatType.range] = 600f;
+        _secondaryStats[(int) SecondaryStatType.size] = ((float) _mainStatsActive[(int)MainStatType.Strength])/2;
+
+        _maxHP = 5*_mainStatsActive[(int) MainStatType.Vitality];
 		if(_currentHP <= 0)
 		{
 			if(!_dead)
