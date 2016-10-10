@@ -22,7 +22,7 @@ public class BattleManager : MonoBehaviour {
     private int[] _goonActionsEnd;
 
     private int _round = 1;
-    private int _roundsPerMin = 600;
+    private float _roundsPerSec = 10;
     private float _roundInterval;
 
     private string _log = "";
@@ -41,7 +41,7 @@ public class BattleManager : MonoBehaviour {
 
     public void RegisterHeroes(Hero[] heroes)
     {
-        _roundInterval = (float) 60 / (float) _roundsPerMin;
+        _roundInterval = 1f / _roundsPerSec;
         //print("interval: " + _roundInterval);
         _heroes = heroes;
         _heroActions = new Action[heroes.Length];
@@ -52,7 +52,7 @@ public class BattleManager : MonoBehaviour {
         {
             _heroActionsEnd[i] = 0;
             Hero aHero = heroes[i];
-            aHero.setMyPos(2000f + prevHeroSize + aHero.GetStatSecondary(SecondaryStatType.size) + heroSpacing, 2000f, 0f);
+            aHero.MyPos = new Vector3(2000f + prevHeroSize + aHero.GetStatSecondary(SecondaryStatType.size) + heroSpacing, 2000f, 0f);
             prevHeroSize = prevHeroSize + heroSpacing + aHero.GetStatSecondary(SecondaryStatType.size);
         }
     }
@@ -227,7 +227,7 @@ public class BattleManager : MonoBehaviour {
                 {
                     float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
                     float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
-                    hero.setMyPos(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                    hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
                 }
             
 			    break;
@@ -253,7 +253,7 @@ public class BattleManager : MonoBehaviour {
                     float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
                     float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     //Vector3 prevPos = hero.MyPos;
-                    hero.setMyPos(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                    hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
                     //print("Hero " + hero.MyName + " moves from " + prevPos + " to " + hero.MyPos + " with ratio " + ratio + " with target " + target.MyPos);
                 }
 
@@ -295,7 +295,7 @@ public class BattleManager : MonoBehaviour {
                 {
                     float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
                     float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
-                    goon.setMyPos(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x)*ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
+                    goon.MyPos = new Vector3(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
                 }
                 break;
 
@@ -322,7 +322,7 @@ public class BattleManager : MonoBehaviour {
                     float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
                     float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     //Vector3 prevPos = goon.MyPos;
-                    goon.setMyPos(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
+                    goon.MyPos = new Vector3(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
                     //print("goon " + goon.MyName + " moves from " + prevPos + " to " + goon.MyPos + " with ratio " + ratio + " with target " + target.MyPos);
                 }
 
@@ -482,7 +482,7 @@ public class BattleManager : MonoBehaviour {
             _goonActionsEnd[i] = 0;
             Goon aGoon = _goons[i];
             float randAngle = Random.Range(0f, Mathf.PI);
-            aGoon.setMyPos(2054f + Mathf.Cos(randAngle)*1000, 2000f + Mathf.Sin(randAngle) * 1000, 0f);
+            aGoon.MyPos = new Vector3(2054f + Mathf.Cos(randAngle) * 1000, 2000f + Mathf.Sin(randAngle) * 1000, 0f);
         }
     }
 
