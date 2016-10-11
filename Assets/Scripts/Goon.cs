@@ -29,6 +29,7 @@ public enum Skill
 {
 	Attack = 0,
 	Heal,
+    Fireball,
 	LENGTH
 }
 
