@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class BattleManager : MonoBehaviour {
 
@@ -22,8 +23,13 @@ public class BattleManager : MonoBehaviour {
     private int[] _goonActionsEnd;
 
     private int _round = 1;
-    private float _roundsPerSec = 10;
+    private float _roundsPerSec = 100;
+    private float _slowMo = 1;
     private float _roundInterval;
+
+    private List<ActiveEffect> _effects;
+
+    private bool _battleOver;
 
     private string _log = "";
     public string Log
@@ -42,6 +48,7 @@ public class BattleManager : MonoBehaviour {
     public void RegisterHeroes(Hero[] heroes)
     {
         _roundInterval = 1f / _roundsPerSec;
+        _effects = new List<ActiveEffect>();
         //print("interval: " + _roundInterval);
         _heroes = heroes;
         _heroActions = new Action[heroes.Length];
@@ -60,12 +67,13 @@ public class BattleManager : MonoBehaviour {
     public void ConductBattle()
     {
         //print("Battle begins.");
+        _battleOver = false;
         InvokeRepeating("invokeBattle", 0f, _roundInterval);
 	}
 
     private void invokeBattle()
     {
-        if (!GoonsDead(_goons) && !GoonsDead(_heroes))
+        if (!_battleOver)
         {
             //print("Starting round: " + _round);
             ConductRound();
@@ -96,8 +104,49 @@ public class BattleManager : MonoBehaviour {
 	private void ConductRound()
 	{
 		_log = "\n" + "*** ROUND " + _round + " ***" + _log;
+
+        if (!_battleOver)
+        {
+            ExecuteEffects();
+        }
+
+        if (!_battleOver)
+        {
+            ActHeroes();
+        }
+
+        if (!_battleOver)
+        {
+            ActEnemies();
+        }
 		
-        for (int i=0; i<_heroes.Length; i++)
+		++_round;
+	}
+
+    private void ActEnemies()
+    {
+        for (int i = 0; i < _goons.Length; i++)
+        {
+            //print("Goon " + _goons[i].MyName + " Position " + _goons[i].MyPos);
+            if (_round == _goonActionsEnd[i])
+            {
+                executeAction(_goonActions[i]);
+            }
+            if (_round >= _goonActionsEnd[i])
+            {
+                if (GoonsDead(_heroes) || GoonsDead(_goons))
+                {
+                    _battleOver = true;
+                    break;
+                }
+                ConductActionsGoon(i);
+            }
+        }
+    }
+
+    private void ActHeroes()
+    {
+        for (int i = 0; i < _heroes.Length; i++)
         {
             //print("Hero " + _heroes[i].MyName + " Position " + _heroes[i].MyPos);
             if (_round == _heroActionsEnd[i])
@@ -107,34 +156,98 @@ public class BattleManager : MonoBehaviour {
             }
             if (_round >= _heroActionsEnd[i])
             {
-                if (GoonsDead(_goons))
+                if (GoonsDead(_heroes) || GoonsDead(_goons))
                 {
+                    _battleOver = true;
                     break;
                 }
                 ConductActionsHero(i);
             }
         }
+    }
 
-        for (int i=0; i<_goons.Length; i++)
+    private void ExecuteEffects()
+    {
+        for (int i = 0; i < _effects.Count; i++)
         {
-            //print("Goon " + _goons[i].MyName + " Position " + _goons[i].MyPos);
-            if (_round == _goonActionsEnd[i])
+            ActiveEffect anEffect = _effects[i];
+            switch (anEffect.SkillType)
             {
-                executeAction(_goonActions[i]);
-            }
-            if (_round >= _goonActionsEnd[i])
-            {
-                if (GoonsDead(_heroes))
-                {
-                    // GAME OVER!
+                case Skill.Fireball:
+                    AdvanceFireball(anEffect);
                     break;
-                }
-                ConductActionsGoon(i);
             }
         }
-		
-		++_round;
-	}
+
+
+        if (GoonsDead(_heroes) || GoonsDead(_goons))
+        {
+            _battleOver = true;
+        }
+    }
+
+    private void AdvanceFireball(ActiveEffect aFB)
+    {
+        if (aFB.Collides)
+        {
+
+        }
+        else
+        {
+            float dist = Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos) - aFB.Size - aFB.TargetUnit.GetStatSecondary(SecondaryStatType.size);
+            if (dist <= aFB.MoveSpeed/_slowMo)
+            {
+                float ratio = dist / Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos);
+                aFB.Pos = new Vector3(aFB.Pos.x + (aFB.TargetUnit.MyPos.x - aFB.Pos.x) * ratio, aFB.Pos.y + (aFB.TargetUnit.MyPos.y - aFB.Pos.y) * ratio, 0f);
+                Goon[] targetPool = aFB.Source is Hero ? _goons : _heroes;
+                //("Blowing up the fireball at " + aFB.Pos + " on turn " + _round);
+                ApplyAOEDamage(aFB.Pos, aFB.EndDamage, aFB.DamageAOE, aFB.HitUnits, targetPool, aFB.Source);
+                _effects.Remove(aFB);
+            }
+            else
+            {
+                float ms = aFB.MoveSpeed / _slowMo;
+                float ratio = ms / Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos);
+                //Vector3 fbPos1 = aFB.Pos;
+                aFB.Pos = new Vector3(aFB.Pos.x + (aFB.TargetUnit.MyPos.x - aFB.Pos.x) * ratio, aFB.Pos.y + (aFB.TargetUnit.MyPos.y - aFB.Pos.y) * ratio, 0f);
+                //print("Fireball moving from " + fbPos1 + " to " + aFB.Pos + " with a ratio of " + ratio);
+            }
+        }
+    }
+
+    private void ApplyAOEDamage(Vector3 blastPos, float[] damage, float[] blastRadius, List<Goon> hitUnits, Goon[] targetPool, Goon source)
+    {
+        for (int i=0; i<targetPool.Length; i++)
+        {
+            bool hitAlready = false;
+            if (hitUnits != null)
+            {
+                if (hitUnits.Contains(targetPool[i]))
+                {
+                    print("Target has already been hit by this skill");
+                    hitAlready = true;
+                }
+            }
+            if (!hitAlready && !targetPool[i].Dead)
+            {
+                float dist = Vector3.Distance(blastPos, targetPool[i].MyPos) - targetPool[i].GetStatSecondary(SecondaryStatType.size);
+                for (int j = 0; j < blastRadius.Length; j++)
+                {
+                    if (dist <= blastRadius[j])
+                    {
+                        targetPool[i].TakeDamage(damage[j]);
+                        _log = "\n" + source.MyName + "'s AOE skill hits " + targetPool[i].MyName + " for "
+                            + damage[j] + " damage. " + targetPool[i].CurrentHP + " HP left." + _log;
+                        if (targetPool[i].Dead)
+                        {
+                            _log = "\n" + targetPool[i].MyName + " has died." + _log;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
 
     private void executeAction(Action act)
     {
@@ -186,6 +299,29 @@ public class BattleManager : MonoBehaviour {
                             + healStrength + " HP. " + target.CurrentHP + " HP left." + _log;
                     }
                     break;
+                case Skill.Fireball:
+                    if (acting.Dead)
+                    {
+
+                    }
+                    else
+                    {
+                        _log = "\n" + acting.MyName + " casts a fireball towards " + target.MyName + _log;
+                        float hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage)*2;
+                        ActiveEffect aFireball = new ActiveEffect();
+                        aFireball.Source = acting;
+                        aFireball.TargetType = (int)TargetType.Unit;
+                        aFireball.TargetUnit = target;
+                        aFireball.EndDamage = new float[2] { hitStrength, hitStrength/2 };
+                        aFireball.PierceCoeff = 0f;
+                        aFireball.Collides = false;
+                        aFireball.DamageAOE = new float[2] { 50f, 100f };
+                        aFireball.SkillType = Skill.Fireball;
+                        aFireball.Size = 2f;
+                        aFireball.MoveSpeed = 100;
+                        _effects.Add(aFireball);
+                    }
+                    break;
             }
         }
         else
@@ -225,7 +361,7 @@ public class BattleManager : MonoBehaviour {
                 }
                 else
                 {
-                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
                     float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
                 }
@@ -250,7 +386,7 @@ public class BattleManager : MonoBehaviour {
                 }
                 else
                 {
-                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
                     float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     //Vector3 prevPos = hero.MyPos;
                     hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
@@ -258,8 +394,36 @@ public class BattleManager : MonoBehaviour {
                 }
 
                 
-			    break;	
-		}
+			    break;
+
+
+            case Skill.Fireball:
+
+                // choose target...
+                target = ChooseTargetToAttack(hero);
+                dist = Vector3.Distance(hero.MyPos, target.MyPos);
+                if (dist <= hero.GetStatSecondary(SecondaryStatType.range)*1.5)
+                {
+                    //attack or whatever
+                    turnsToAct = 40 - hero.GetStatBase(MainStatType.Agility);
+                    //print("initiating attack action " + hero.MyName + " and his stat is " + hero.GetStatBase(MainStatType.Agility));
+                    anAction = new Action(hero, target, Skill.Fireball, _round, _round + turnsToAct);
+                    //print("acting unit " + anAction.getActing().MyName + " and target unit " + anAction.getTarget().MyName);
+                    _heroActions[whichHero] = anAction;
+                    _heroActionsEnd[whichHero] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
+                    float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    //Vector3 prevPos = hero.MyPos;
+                    hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                    //print("Hero " + hero.MyName + " moves from " + prevPos + " to " + hero.MyPos + " with ratio " + ratio + " with target " + target.MyPos);
+                }
+
+
+                break;
+        }
     }
 
     private void ConductActionsGoon(int whichGoon)
@@ -293,7 +457,7 @@ public class BattleManager : MonoBehaviour {
                 }
                 else
                 {
-                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
                     float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     goon.MyPos = new Vector3(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);
                 }
@@ -319,7 +483,7 @@ public class BattleManager : MonoBehaviour {
                 }
                 else
                 {
-                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed);
+                    float ms = goon.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
                     float ratio = Mathf.Min(ms, dist - goon.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
                     //Vector3 prevPos = goon.MyPos;
                     goon.MyPos = new Vector3(goon.MyPos.x + (target.MyPos.x - goon.MyPos.x) * ratio, goon.MyPos.y + (target.MyPos.y - goon.MyPos.y) * ratio, 0f);

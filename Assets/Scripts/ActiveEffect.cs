@@ -1,8 +1,39 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-public class ActiveEffect : MonoBehaviour
+
+public enum TargetType
 {
+    Unit = 0,
+    Coordinate,
+    AOE,
+    LENGTH
+}
+
+public class ActiveEffect
+{
+    public ActiveEffect()
+    {
+
+    }
+
+    protected Goon _source;
+    protected Vector3 _startPos;
+    public Goon Source
+    {
+        get
+        {
+            return _source;
+        }
+        set
+        {
+            _source = value;
+            _startPos = value.MyPos;
+            _myPos = value.MyPos;
+        }
+    }
+
     protected bool _collides;
     public bool Collides
     {
@@ -16,29 +47,16 @@ public class ActiveEffect : MonoBehaviour
         }
     }
 
-    protected bool _pierces;
-    public bool Pierces
+    protected float _pierceCoeff;
+    public float PierceCoeff
     {
         get
         {
-            return _pierces;
+            return _pierceCoeff;
         }
         set
         {
-            _pierces = value;
-        }
-    }
-
-    protected string _myName;
-    public string Name
-    {
-        get
-        {
-            return _myName;
-        }
-        set
-        {
-            _myName = value;
+            _pierceCoeff = value;
         }
     }
 
@@ -52,6 +70,18 @@ public class ActiveEffect : MonoBehaviour
         set
         {
             _myPos = value;
+        }
+    }
+
+    public Vector3 StartPos
+    {
+        get
+        {
+            return _startPos;
+        }
+        set
+        {
+            _startPos = value;
         }
     }
 
@@ -107,8 +137,9 @@ public class ActiveEffect : MonoBehaviour
         }
     }
 
-    protected float _endDmg;
-    public float EndDamage
+    // smallest AOE's dmg to largest AOE's dmg
+    protected float[] _endDmg;
+    public float[] EndDamage
     {
         get
         {
@@ -119,17 +150,97 @@ public class ActiveEffect : MonoBehaviour
             _endDmg = value;
         }
     }
-
-    protected float _dmgRadius;
-    public float DamageRadius
+    
+    // smallest AOE to largest AOE
+    protected float[] _dmgAOE;
+    public float[] DamageAOE
     {
         get
         {
-            return _dmgRadius;
+            return _dmgAOE;
         }
         set
         {
-            _dmgRadius = value;
+            _dmgAOE = value;
         }
+    }
+
+    protected int _targetType;
+    public int TargetType
+    {
+        get
+        {
+            return _targetType;
+        }
+        set
+        {
+            _targetType = value;
+        }
+    }
+
+    protected Goon _targetUnit;
+    public Goon TargetUnit
+    {
+        get
+        {
+            return _targetUnit;
+        }
+        set
+        {
+            _targetUnit = value;
+        }
+    }
+
+    protected Vector3 _targetPos;
+    public Vector3 TargetPos
+    {
+        get
+        {
+            return _targetPos;
+        }
+        set
+        {
+            _targetPos = value;
+        }
+    }
+
+    protected float _targetAOE;
+    public float TargetAOE
+    {
+        get
+        {
+            return _targetAOE;
+        }
+        set
+        {
+            _targetAOE = value;
+        }
+    }
+
+    protected List<Goon> _hitUnits;
+    public List<Goon> HitUnits
+    {
+        get
+        {
+            return _hitUnits;
+        }
+        set
+        {
+            _hitUnits = value;
+        }
+    }
+
+    public void addHitUnit(Goon unit)
+    {
+        _hitUnits.Add(unit);
+    }
+
+    public bool hasUnitBeenHit(Goon unit)
+    {
+        if (_hitUnits.Contains(unit))
+        {
+            return true;
+        }
+        return false;
     }
 }
