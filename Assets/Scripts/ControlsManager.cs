@@ -17,14 +17,14 @@ public enum BattleStatus
     LENGTH
 }
 
-public enum MiddlePanelType
+public enum MainPanelType
 {
 	BattleLog = 0,
 	LootList,
 	LENGTH
 }
 
-public enum RightPanelType
+public enum UtilPanelType
 {
 	CharSheet = 0,
 	Inventory,
@@ -52,7 +52,10 @@ public class ControlsManager : MonoBehaviour {
 	
 	public GameObject CharactersContainer;
 	public GameObject ItemsContainer;
-	
+    public GameObject ScriptsContainer;
+
+    private DrawerInventory _drawerInventory;
+
 	private GameMode _gameMode = GameMode.Town;
 	// CHARACTERS PANEL
 	private Hero[] _characters = new Hero[6];
@@ -60,7 +63,7 @@ public class ControlsManager : MonoBehaviour {
 	private int _selectedCharacter = -1;
 	
 	// MAIN PANEL
-	private MiddlePanelType _mainPanel = MiddlePanelType.BattleLog;
+	private MainPanelType _mainPanel = MainPanelType.BattleLog;
 	private string _lastLog = "";
 	private int _logLength=0;
 	
@@ -68,15 +71,35 @@ public class ControlsManager : MonoBehaviour {
 	
 	// UTILITY PANEL
 		// Inventory Window
-	private RightPanelType _rightPanel = RightPanelType.CharSheet;
-	
-	private Texture[] _itemTextures = new Texture[(int) ItemType.LENGTH];
-	private Texture2D _invRagdoll;// = Resources.Load("InvBody") as Texture
+	private UtilPanelType _utilPanel = UtilPanelType.CharSheet;
 
-	private ItemManager _itemUnderCursor;
+    private ItemManager _itemUnderCursor;
+    public ItemManager ItemUnderCursor
+    {
+        get
+        {
+            return _itemUnderCursor;
+        }
+        set
+        {
+            _itemUnderCursor = value;
+        }
+    }
+
+    private ItemManager _itemUnderCursorUnclicked;
+    public ItemManager ItemUnderCursorUnclicked
+    {
+        get
+        {
+            return _itemUnderCursorUnclicked;
+        }
+        set
+        {
+            _itemUnderCursorUnclicked = value;
+        }
+    }
 
     private Texture[] _charTextures = new Texture[(int) GoonSprites.LENGTH];
-
 
 		// Skills Window
 	private GUIContent[] _skills_1_List;
@@ -95,30 +118,25 @@ public class ControlsManager : MonoBehaviour {
 	//private GUIStyle _listStyle = new GUIStyle();
 	Rect _tacticsBasePositionBox = new Rect(0, 50, 150, 30);
 	
-	
 	#endregion
 	
 	#region Start/Update/OnGUI
 	
 	// Use this for initialization
 	void Start () {
-		//Initialize characters
-		for (int i=0; i<=5; ++i)
+        _drawerInventory = ScriptsContainer.AddComponent<DrawerInventory>();
+        _drawerInventory.SetControlsManager(this);
+
+        //Initialize characters
+        for (int i=0; i<=5; ++i)
 		{
 			_characters[i] = CharactersContainer.AddComponent<Hero>();
 			_characters[i].LoadHero(i);
-		}
-		
-		//Initialize item icons
-		for (int i=0; i< (int) ItemType.LENGTH; ++i)
-		{
-			_itemTextures[i] = Resources.Load(((ItemType)i).ToString() + " Icon") as Texture;	
 		}
         for (int i = 0; i < (int)GoonSprites.LENGTH; ++i)
         {
             _charTextures[i] = Resources.Load(((GoonSprites)i).ToString()) as Texture2D;
         }
-        _invRagdoll = Resources.Load("InvBody") as Texture2D;
 		_background = Resources.Load("MenuBox") as Texture;
 		
 		_listStyle.normal.textColor = Color.white; 
@@ -244,7 +262,7 @@ public class ControlsManager : MonoBehaviour {
 		case GameMode.Adventure:		
 			switch(_mainPanel)
 			{
-			case MiddlePanelType.BattleLog:
+			case MainPanelType.BattleLog:
 				switch(_battleStatus)
 				{
 				case BattleStatus.Scouting:
@@ -268,7 +286,7 @@ public class ControlsManager : MonoBehaviour {
                     
                 }
 				break;
-			case MiddlePanelType.LootList:
+			case MainPanelType.LootList:
 				MainPanelLoot(mainPanelWidth, mainPanelHeight);
 				break;
 			}
@@ -293,7 +311,7 @@ public class ControlsManager : MonoBehaviour {
         switch (_gameMode)
         {
             case GameMode.Town:
-                MiddlePanelButtonsTown(buttonPanelWidth, buttonPanelHeight);
+                MainPanelButtonsTown(buttonPanelWidth, buttonPanelHeight);
                 break;
 
             case GameMode.Adventure:
@@ -311,33 +329,34 @@ public class ControlsManager : MonoBehaviour {
 		
 		UtilPanelButtons(utilPanelWidth, utilPanelHeight);
 		
-		switch (_rightPanel)
+		switch (_utilPanel)
 		{
-    		case RightPanelType.CharSheet:
+    		case UtilPanelType.CharSheet:
 				GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "CHARSHEET");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9* utilPanelHeight / 10));
 				UtilPanelCharSheet(utilPanelWidth, 9* utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
-    		case RightPanelType.Inventory:
+    		case UtilPanelType.Inventory:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "INVENTORY");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
-				UtilPanelInventory(utilPanelWidth, 9* utilPanelHeight / 10);
+                _drawerInventory.UtilPanelInventory(utilPanelWidth, 9* utilPanelHeight / 10,
+                    _selectedCharacter == -1 ? null : _characters[_selectedCharacter]);
 				GUI.EndGroup ();
         		break;
-			case RightPanelType.Skills:
+			case UtilPanelType.Skills:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "SKILLS");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
 				UtilPanelSkills(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
-    		case RightPanelType.Tactics:
+    		case UtilPanelType.Tactics:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "TACTICS");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
 				UtilPanelTactics(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;    		
-			case RightPanelType.Statistics:
+			case UtilPanelType.Statistics:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "STATS");
         		break;
 		}
@@ -347,17 +366,16 @@ public class ControlsManager : MonoBehaviour {
 		if(_itemUnderCursor != null)
 		{
 			Event e = Event.current;
-			
-			GUI.Label(new Rect(e.mousePosition.x, e.mousePosition.y, 100,100), 
-				_itemTextures[(int) _itemUnderCursor.MyItemType]);	
-		}
+
+            _drawerInventory.DrawItemAtMouseCursor(e.mousePosition.x, e.mousePosition.y);
+        }
 		
 		if(_itemUnderCursorUnclicked != null)
 		{
 			DisplayItemStats(_itemUnderCursorUnclicked);
 		}
 	}
-	
+
 	#endregion
 	
 	#region CharacterPanel
@@ -402,9 +420,9 @@ public class ControlsManager : MonoBehaviour {
 	
 	#endregion
 	
-	#region MiddlePanel
+	#region MainPanel
 	
-	private void MiddlePanelButtonsTown(int panelWidth, int panelHeight)
+	private void MainPanelButtonsTown(int panelWidth, int panelHeight)
 	{
         int horizontalCount = 1;
         int verticalCount = 6;
@@ -448,7 +466,7 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				_mainPanel = MiddlePanelType.BattleLog;
+				_mainPanel = MainPanelType.BattleLog;
 			}
 		}
 		
@@ -465,7 +483,7 @@ public class ControlsManager : MonoBehaviour {
 				{
 					return;	
 				}
-				_mainPanel = MiddlePanelType.BattleLog;
+				_mainPanel = MainPanelType.BattleLog;
 				_currentBattle = CharactersContainer.AddComponent<BattleManager>();
 				//newBattle.InitializeBattle(_characters);
 				_currentBattle.RegisterHeroes(_characters);
@@ -489,7 +507,7 @@ public class ControlsManager : MonoBehaviour {
 					return;	
 				}
                 //print("battle is starting ");
-                _mainPanel = MiddlePanelType.BattleLog;
+                _mainPanel = MainPanelType.BattleLog;
                 _currentBattle.ConductBattle();
 				//_lastLog = _currentBattle.Log;
 				//_logLength = StringLinesCount(_lastLog);
@@ -511,7 +529,7 @@ public class ControlsManager : MonoBehaviour {
 				}
 
                 LootListClear();
-                _mainPanel = MiddlePanelType.BattleLog;
+                _mainPanel = MainPanelType.BattleLog;
 				_battleStatus = BattleStatus.Scouting;
 			}
 			break;
@@ -525,7 +543,7 @@ public class ControlsManager : MonoBehaviour {
                 (4 % verticalCount) * panelHeight / verticalCount,
                 panelWidth / horizontalCount, panelHeight / verticalCount), "Loot"))
 			{
-				_mainPanel = MiddlePanelType.LootList;
+				_mainPanel = MainPanelType.LootList;
 			}
 		}
 		
@@ -551,49 +569,7 @@ public class ControlsManager : MonoBehaviour {
 		int slotWidth = panelWidth/CONSTANTS.LootCols;
 		int slotHeight = panelHeight/(5*CONSTANTS.LootRows);
 		
-		ItemsSubpanel(slotWidth, slotHeight, _lootList, CONSTANTS.LootCols, CONSTANTS.LootRows);
-	}
-	
-	private ItemManager _itemUnderCursorUnclicked;
-	
-	private void ItemsSubpanel(int slotWidth, int slotHeight, ItemManager[] selectedInventory, int cols, int rows)
-	{
-		// Base display & react loop
-		for (int i=0; i < cols; ++i)
-		{
-			for (int j=0; j < rows; ++j)
-			{
-				int slotnumber = i*rows+j;
-				Rect slotRect = new Rect (i*slotWidth, j*slotHeight, slotWidth, slotHeight);
-				//Event e = Event.current;
-				
-				ItemsManageSlot(slotRect, ref selectedInventory[slotnumber]);
-			}
-		}
-		
-		// Mouse Hover detection loop
-		for (int i=0; i < cols; ++i)
-		{
-			for (int j=0; j < rows; ++j)
-			{
-				int slotnumber = i*rows+j;
-				
-				if(selectedInventory[slotnumber] != null)
-				{
-					Rect slotRect = new Rect (i*slotWidth, j*slotHeight, slotWidth, slotHeight);
-					Event e = Event.current;
-					
-					//MOUSEHOVER TEST
-					if(slotRect.Contains(e.mousePosition))
-					{
-						_itemUnderCursorUnclicked = selectedInventory[slotnumber];
-						//DisplayItemStats(selectedInventory[slotnumber], e.mousePosition);
-						//GUI.Label(new Rect(slotRect.xMax, slotRect.yMin, 100, 100), 
-						//	selectedInventory[slotnumber].ToString());	
-					}
-				}
-			}
-		}
+		_drawerInventory.ItemsSubpanel(slotWidth, slotHeight, _lootList, CONSTANTS.LootCols, CONSTANTS.LootRows);
 	}
 	
 	private Texture _background;
@@ -698,55 +674,6 @@ public class ControlsManager : MonoBehaviour {
 		}
 	}
 	
-	private void UtilPanelInventory(int panelWidth, int panelHeight)
-	{
-		if(_selectedCharacter == -1)
-		{
-			return;
-		}
-	
-		Hero character = _characters[_selectedCharacter];
-		
-		// EQUIPMENT
-		
-		ItemManager[] selectedEquipment = character.Equipment;
-		
-		int slotWidth = panelWidth/CONSTANTS.InvCharCols;
-		int slotHeight = panelHeight/(2*CONSTANTS.InvCharRows);
-		
-		GUI.Label(new Rect(panelWidth/6,0, panelWidth, panelHeight/2), _invRagdoll);
-		
-		Rect equipmentHead = new Rect(panelWidth/2, 1*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentHead, 
-			ref selectedEquipment[(int) EquipmentSlotType.Head], EquipmentSlotType.Head);
-		Rect equipmentChest = new Rect(panelWidth/2, 3*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentChest, 
-			ref selectedEquipment[(int) EquipmentSlotType.Chest], EquipmentSlotType.Chest);
-		Rect equipmentCloak = new Rect(3*panelWidth/4, 2*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentCloak, 
-			ref selectedEquipment[(int) EquipmentSlotType.Cloak], EquipmentSlotType.Cloak);
-		Rect equipmentMainHand = new Rect(panelWidth/4, 3*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentMainHand, 
-			ref selectedEquipment[(int) EquipmentSlotType.MainHand], EquipmentSlotType.MainHand);
-		Rect equipmentOffHand = new Rect(3*panelWidth/4, 4*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentOffHand, 
-			ref selectedEquipment[(int) EquipmentSlotType.OffHand], EquipmentSlotType.OffHand);
-		Rect equipmentGloves = new Rect(panelWidth/4, 5*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentGloves, 
-			ref selectedEquipment[(int) EquipmentSlotType.Gloves], EquipmentSlotType.Gloves);
-		Rect equipmentBoots = new Rect(panelWidth/2, 6*panelHeight/16, slotWidth, slotHeight);
-		ItemsManageSlot(equipmentBoots, 
-			ref selectedEquipment[(int) EquipmentSlotType.Boots], EquipmentSlotType.Boots);
-		
-		// INVENTORY
-		
-		//ItemManager[] selectedInventory = character.Inventory;
-		
-		GUI.BeginGroup(new Rect(0, panelHeight/2, panelWidth, panelHeight/2));
-		ItemsSubpanel(slotWidth, slotHeight, character.Inventory, CONSTANTS.InvCharCols, CONSTANTS.InvCharRows);
-		GUI.EndGroup();
-	}
-	
 	private void UtilPanelSkills(int panelWidth, int panelHeight)
 	{
 		if(_selectedCharacter == -1)
@@ -761,103 +688,62 @@ public class ControlsManager : MonoBehaviour {
 			"Current Skill: "+myChar.Skill_1.ToString());
 	}
 	
-	private void ItemsManageSlot(Rect slotRect, ref ItemManager slotItem, EquipmentSlotType? slotType = null)
-	{
-		if(slotItem == null)
-		{
-			if(GUI.Button (slotRect, "SLOT") && Event.current.button == 0)
-			{
-				if(_itemUnderCursor != null && 
-					(slotType == null || EquipmentSlotCheckItemCompatability(slotType.Value, _itemUnderCursor.MyItemClass)))
-				{
-					slotItem = _itemUnderCursor;
-					_itemUnderCursor = null;
-				}
-				else
-				{
-					if(slotType == null)
-					{
-						//slotItem = ItemsContainer.AddComponent<ItemManager>();
-					}
-				}
-			}
-		}
-		else
-		{
-			if(GUI.Button (slotRect, _itemTextures[(int) slotItem.MyItemType]) && Event.current.button == 0)
-			{
-				if(_itemUnderCursor != null && 
-					(slotType == null || EquipmentSlotCheckItemCompatability(slotType.Value, _itemUnderCursor.MyItemClass)))
-				{
-					ItemManager tmp = _itemUnderCursor;
-					_itemUnderCursor = slotItem;
-					slotItem = tmp;
-				}
-				else
-				{
-					_itemUnderCursor = slotItem;
-					slotItem = null;
-				}
-			}
-		}
-	}
-	
 	private void UtilPanelButtons(int panelWidth, int panelHeight)
 	{
 		// Buttons
 		if(GUI.Button (new Rect (0, panelHeight/20, panelWidth/5, panelHeight/20), "CharSheet"))
 		{
-			if (_rightPanel == RightPanelType.CharSheet)
+			if (_utilPanel == UtilPanelType.CharSheet)
 			{
-				_rightPanel = RightPanelType.CharSheet;		
+				_utilPanel = UtilPanelType.CharSheet;		
 			}
 			else
 			{
-				_rightPanel = RightPanelType.CharSheet;	
+				_utilPanel = UtilPanelType.CharSheet;	
 			}
 		}
 		if(GUI.Button (new Rect (panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Inventory"))
 		{
-			if (_rightPanel == RightPanelType.Inventory)
+			if (_utilPanel == UtilPanelType.Inventory)
 			{
-				_rightPanel = RightPanelType.CharSheet;	
+				_utilPanel = UtilPanelType.CharSheet;	
 			}
 			else
 			{
-				_rightPanel = RightPanelType.Inventory;	
+				_utilPanel = UtilPanelType.Inventory;	
 			}
 		}
 		if(GUI.Button (new Rect (2*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Skills"))
 		{
-			if (_rightPanel == RightPanelType.Skills)
+			if (_utilPanel == UtilPanelType.Skills)
 			{
-				_rightPanel = RightPanelType.CharSheet;	
+				_utilPanel = UtilPanelType.CharSheet;	
 			}
 			else
 			{
-				_rightPanel = RightPanelType.Skills;	
+				_utilPanel = UtilPanelType.Skills;	
 			}
 		}
 		if(GUI.Button (new Rect (3*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Tactics"))
 		{
-			if (_rightPanel == RightPanelType.Tactics)
+			if (_utilPanel == UtilPanelType.Tactics)
 			{
-				_rightPanel = RightPanelType.CharSheet;	
+				_utilPanel = UtilPanelType.CharSheet;	
 			}
 			else
 			{
-				_rightPanel = RightPanelType.Tactics;	
+				_utilPanel = UtilPanelType.Tactics;	
 			}
 		}
 		if(GUI.Button (new Rect (4*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Statistics"))
 		{
-			if (_rightPanel == RightPanelType.Statistics)
+			if (_utilPanel == UtilPanelType.Statistics)
 			{
-				_rightPanel = RightPanelType.CharSheet;	
+				_utilPanel = UtilPanelType.CharSheet;	
 			}
 			else
 			{
-				_rightPanel = RightPanelType.Statistics;	
+				_utilPanel = UtilPanelType.Statistics;	
 			}
 		}
 	}
@@ -865,79 +751,6 @@ public class ControlsManager : MonoBehaviour {
 	#endregion
 	
 	#region Utlity
-	
-	// returns true if item fits slot; false otherwise
-	private bool EquipmentSlotCheckItemCompatability(EquipmentSlotType slotType, ItemClass itemClass)
-	{
-		//returnVal = false;
-		switch(slotType)
-		{
-			// Helmet
-		case EquipmentSlotType.Head:
-			if(itemClass == ItemClass.Helmet)
-			{
-				return true;	
-			}
-			break;
-			// Cloak
-		case EquipmentSlotType.Cloak:		
-			if(itemClass == ItemClass.Cloak)
-			{
-				return true;	
-			}
-			break;
-			// Gloves			
-		case EquipmentSlotType.Gloves:		
-			if(itemClass == ItemClass.Gloves)
-			{
-				return true;	
-			}
-			break;
-			// Armor 			
-		case EquipmentSlotType.Chest:		
-			if(itemClass == ItemClass.Armor)
-			{
-				return true;	
-			}
-			break;
-			// Main-hand (1h or 2h weapon)		
-		case EquipmentSlotType.MainHand:		
-			if(itemClass == ItemClass.Melee1H)
-			{
-				return true;	
-			}
-			else if((itemClass == ItemClass.Melee2H || itemClass == ItemClass.Ranged2H) )
-				//&& _equippedItems[5] == null)
-			{
-				return true;	
-			}
-			break;
-			// off-hand (shielf or second weapon)		
-		case EquipmentSlotType.OffHand:		
-			if(itemClass == ItemClass.OffHand || itemClass == ItemClass.Melee1H)
-			{
-				//GUITexture mainhandItem = _equippedItems[4];
-				//if(mainhandItem == null)
-				//{
-					return true;	
-				//}
-				//else if(!TwoHandedItemEquipped())
-				//{
-				//	return true;
-				//}
-			}
-			break;
-			// boots		
-		case EquipmentSlotType.Boots:		
-			if(itemClass == ItemClass.Boots)
-			{
-				return true;	
-			}
-			break;
-		}
-		
-		return false;
-	}
 	
 	private int StringLinesCount(string s)
 	{
