@@ -55,15 +55,34 @@ public class ControlsManager : MonoBehaviour {
     public GameObject ScriptsContainer;
 
     private DrawerInventory _drawerInventory;
+    private DrawerUtils _drawerUtils;
 
-	private GameMode _gameMode = GameMode.Town;
+    private GameMode _gameMode = GameMode.Town;
 	// CHARACTERS PANEL
 	private Hero[] _characters = new Hero[6];
-	
-	private int _selectedCharacter = -1;
-	
-	// MAIN PANEL
-	private MainPanelType _mainPanel = MainPanelType.BattleLog;
+	public Hero[] Characters
+    {
+        get
+        {
+            return _characters;
+        }
+    }
+
+    private int _selectedCharacter = -1;
+    public int SelectedCharacter
+    {
+        get
+        {
+            return _selectedCharacter;
+        }
+        set
+        {
+            _selectedCharacter = value;
+        }
+    }
+
+    // MAIN PANEL
+    private MainPanelType _mainPanel = MainPanelType.BattleLog;
 	private string _lastLog = "";
 	private int _logLength=0;
 	
@@ -71,7 +90,7 @@ public class ControlsManager : MonoBehaviour {
 	
 	// UTILITY PANEL
 		// Inventory Window
-	private UtilPanelType _utilPanel = UtilPanelType.CharSheet;
+
 
     private ItemManager _itemUnderCursor;
     public ItemManager ItemUnderCursor
@@ -101,31 +120,17 @@ public class ControlsManager : MonoBehaviour {
 
     private Texture[] _charTextures = new Texture[(int) GoonSprites.LENGTH];
 
-		// Skills Window
-	private GUIContent[] _skills_1_List;
-	private ComboBox _skills_1_Control;// = new ComboBox();
-	//private GUIStyle _listStyle = new GUIStyle();
-	Rect _skills_1_Box = new Rect(0, 0, 150, 30);
-	
-		// Tactics Windows
-	private GUIContent[] _tacticsTargetSelectionList;
-	private ComboBox _tacticsTargetSelectionControl;// = new ComboBox();
-	private GUIStyle _listStyle = new GUIStyle();
-	Rect _tacticsTargetSelectionBox = new Rect(0, 0, 150, 30);
-	
-	private GUIContent[] _tacticsBasePositionList;
-	private ComboBox _tacticsBasePositionControl;// = new ComboBox();
-	//private GUIStyle _listStyle = new GUIStyle();
-	Rect _tacticsBasePositionBox = new Rect(0, 50, 150, 30);
-	
-	#endregion
-	
-	#region Start/Update/OnGUI
-	
-	// Use this for initialization
-	void Start () {
+    #endregion
+
+    #region Start/Update/OnGUI
+
+    // Use this for initialization
+    void Start () {
         _drawerInventory = ScriptsContainer.AddComponent<DrawerInventory>();
         _drawerInventory.SetControlsManager(this);
+
+        _drawerUtils = ScriptsContainer.AddComponent<DrawerUtils>();
+        _drawerUtils.SetControlsManager(this);
 
         //Initialize characters
         for (int i=0; i<=5; ++i)
@@ -138,42 +143,6 @@ public class ControlsManager : MonoBehaviour {
             _charTextures[i] = Resources.Load(((GoonSprites)i).ToString()) as Texture2D;
         }
 		_background = Resources.Load("MenuBox") as Texture;
-		
-		_listStyle.normal.textColor = Color.white; 
-		_listStyle.onHover.background =
-		_listStyle.hover.background = new Texture2D(2, 2);
-		_listStyle.padding.left =
-		_listStyle.padding.right =
-		_listStyle.padding.top =
-		_listStyle.padding.bottom = 4;
-		
-		// tactics menus init
-		_tacticsTargetSelectionList = new GUIContent[(int) TacticsTargetSelection.LENGTH];
-		for( int i=0; i< (int) TacticsTargetSelection.LENGTH; ++i)
-		{
-			_tacticsTargetSelectionList[i] = new GUIContent(((TacticsTargetSelection) i).ToString());
-		}
-		_tacticsTargetSelectionControl = new ComboBox(
-			_tacticsTargetSelectionBox, new GUIContent("Pick Tactic"), 
-			_tacticsTargetSelectionList, "button", "box", _listStyle);
-		
-		_tacticsBasePositionList = new GUIContent[(int) TacticsBasePosition.LENGTH];
-		for( int i=0; i< (int) TacticsBasePosition.LENGTH; ++i)
-		{
-			_tacticsBasePositionList[i] = new GUIContent(((TacticsBasePosition) i).ToString());
-		}
-		_tacticsBasePositionControl = new ComboBox(
-			_tacticsBasePositionBox, new GUIContent("Pick Tactic"), 
-			_tacticsBasePositionList, "button", "box", _listStyle);
-		
-		_skills_1_List = new GUIContent[(int) Skill.LENGTH];
-		for( int i=0; i< (int) Skill.LENGTH; ++i)
-		{
-			_skills_1_List[i] = new GUIContent(((Skill) i).ToString());
-		}
-		_skills_1_Control = new ComboBox(
-			_skills_1_Box, new GUIContent("Pick Skill"), 
-			_skills_1_List, "button", "box", _listStyle);
 	}
 	
 	// Update is called once per frame
@@ -243,7 +212,7 @@ public class ControlsManager : MonoBehaviour {
 		GUI.BeginGroup (new Rect (Screen.width - charsPanelWidth, 0, charsPanelWidth, charsPanelHeight));
 		for (int i=0; i<=5; ++i)
 		{
-            CharacterPanelButtons(i, charsPanelWidth, charsPanelHeight);
+            _drawerUtils.CharacterPanelButtons(i, charsPanelWidth, charsPanelHeight);
 			//_characters[i].LoadHero(i);
 		}
 		GUI.EndGroup ();
@@ -326,15 +295,15 @@ public class ControlsManager : MonoBehaviour {
 		GUI.BeginGroup (new Rect (mainPanelWidth + buttonPanelWidth, 0, utilPanelWidth, utilPanelHeight));
 		GUI.Box (new Rect (0, 0, utilPanelWidth, utilPanelHeight), 
 			_selectedCharacter == -1 ? "NO SELECTION" : _characters[_selectedCharacter].MyName);
+
+        _drawerUtils.UtilPanelButtons(utilPanelWidth, utilPanelHeight);
 		
-		UtilPanelButtons(utilPanelWidth, utilPanelHeight);
-		
-		switch (_utilPanel)
+		switch (_drawerUtils.UtilPanel)
 		{
     		case UtilPanelType.CharSheet:
 				GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "CHARSHEET");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9* utilPanelHeight / 10));
-				UtilPanelCharSheet(utilPanelWidth, 9* utilPanelHeight / 10);
+                _drawerUtils.UtilPanelCharSheet(utilPanelWidth, 9* utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
     		case UtilPanelType.Inventory:
@@ -347,13 +316,13 @@ public class ControlsManager : MonoBehaviour {
 			case UtilPanelType.Skills:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "SKILLS");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
-				UtilPanelSkills(utilPanelWidth, 9 * utilPanelHeight / 10);
+                _drawerUtils.UtilPanelSkills(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;
     		case UtilPanelType.Tactics:
         		GUI.Label (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 50), "TACTICS");
 				GUI.BeginGroup (new Rect (0, utilPanelHeight / 10, utilPanelWidth, 9 * utilPanelHeight / 10));
-				UtilPanelTactics(utilPanelWidth, 9 * utilPanelHeight / 10);
+                _drawerUtils.UtilPanelTactics(utilPanelWidth, 9 * utilPanelHeight / 10);
 				GUI.EndGroup ();
         		break;    		
 			case UtilPanelType.Statistics:
@@ -380,43 +349,7 @@ public class ControlsManager : MonoBehaviour {
 	
 	#region CharacterPanel
 	
-	private void CharacterPanelButtons(int i, int panelWidth, int panelHeight)
-	{
-        int horizontalCount = 1;
-        int verticalCount = 6;
-		GUI.BeginGroup (new Rect ((i % horizontalCount) * (panelWidth / horizontalCount), 
-            (i % verticalCount) * (panelHeight / verticalCount), panelWidth / horizontalCount, panelHeight / verticalCount));
-		if(GUI.Button (new Rect (0, 0, panelWidth / horizontalCount, panelHeight / verticalCount), "CHAR"+i))
-		{
-			if(_itemUnderCursor != null)
-			{
-				if(_characters[i].TryToPlaceItemInInventory(_itemUnderCursor))
-				{
-					_itemUnderCursor = null;	
-				}
-			}
-			else
-			{
-				if (_selectedCharacter == i)
-				{
-					_selectedCharacter = -1;	
-				}
-				else
-				{
-					_selectedCharacter = i;	
-					//_tacticsTargetSelectionControl.Show();
-					
-					// skills clear boxes
-					_skills_1_Control.SelectedItemIndex = (int) _characters[i].Skill_1;
-					
-					// tactics clear boxes
-					_tacticsTargetSelectionControl.SelectedItemIndex = (int) _characters[i].TargetSelection;
-					_tacticsBasePositionControl.SelectedItemIndex = (int) _characters[i].BasePosition;
-				}
-			}
-		}
-		GUI.EndGroup ();
-	}
+	
 	
 	#endregion
 	
@@ -626,128 +559,7 @@ public class ControlsManager : MonoBehaviour {
 
     #region UtilPanel
 
-    private void UtilPanelTactics(int panelWidth, int panelHeight)
-	{
-		if(_selectedCharacter == -1)
-		{
-			return;
-		}
-		
-		Hero myChar = _characters[_selectedCharacter];
-		
-		myChar.TargetSelection = (TacticsTargetSelection) _tacticsTargetSelectionControl.Show();
-		GUI.Label (new Rect (150, 0, panelWidth-150, 30), 
-			"Current Target Selection: "+myChar.TargetSelection.ToString());
-		
-		myChar.BasePosition = (TacticsBasePosition) _tacticsBasePositionControl.Show();
-		GUI.Label (new Rect (150, 50, panelWidth-150, 30), 
-			"Current Base Position: "+myChar.BasePosition.ToString());
-	}
-			
-	private void UtilPanelCharSheet(int panelWidth, int panelHeight)
-	{
-		if(_selectedCharacter != -1)
-		{
-			GUI.Label (new Rect (0, 15, panelWidth/2, 50), "Name: "+_characters[_selectedCharacter].MyName);
-			GUI.Label (new Rect (0, 30, panelWidth/2, 50), 
-				"Class: "+ ((HeroClassType) _characters[_selectedCharacter].HeroClass).ToString());
-			GUI.Label (new Rect (0, 45, panelWidth/2, 50), "Level: "+_characters[_selectedCharacter].Level);
-			GUI.Label (new Rect (0, 60, panelWidth/2, 50), "HP: "
-				+_characters[_selectedCharacter].CurrentHP+"/"+_characters[_selectedCharacter].MaxHP);
-			int skip = 15;
-			int start = 90;
-			for(int i=0; i< (int) MainStatType.LENGTH; ++i)
-			{
-				int baseStat = _characters[_selectedCharacter].GetStatBase((MainStatType)i);
-				int activeStat = _characters[_selectedCharacter].GetStatActive((MainStatType)i);
-				
-				GUI.Label (new Rect (0, start+i*skip, panelWidth/2, 50), 
-					((MainStatType)i).ToString() + ": " + activeStat + "("+baseStat +")");
-			}
-			start += (skip*((int) MainStatType.LENGTH)+10);
-			for(int i=0; i< (int) SecondaryStatType.LENGTH; ++i)
-			{
-				double secondaryStat = _characters[_selectedCharacter].GetStatSecondary((SecondaryStatType)i);
-				GUI.Label (new Rect (0, start+i*skip, panelWidth/2, 50), 
-					((SecondaryStatType)i).ToString() + ": " + secondaryStat);
-			}
-		}
-	}
-	
-	private void UtilPanelSkills(int panelWidth, int panelHeight)
-	{
-		if(_selectedCharacter == -1)
-		{
-			return;
-		}
-		
-		Hero myChar = _characters[_selectedCharacter];
-		
-		myChar.Skill_1 = (Skill) _skills_1_Control.Show();
-		GUI.Label (new Rect (150, 0, panelWidth-150, 30), 
-			"Current Skill: "+myChar.Skill_1.ToString());
-	}
-	
-	private void UtilPanelButtons(int panelWidth, int panelHeight)
-	{
-		// Buttons
-		if(GUI.Button (new Rect (0, panelHeight/20, panelWidth/5, panelHeight/20), "CharSheet"))
-		{
-			if (_utilPanel == UtilPanelType.CharSheet)
-			{
-				_utilPanel = UtilPanelType.CharSheet;		
-			}
-			else
-			{
-				_utilPanel = UtilPanelType.CharSheet;	
-			}
-		}
-		if(GUI.Button (new Rect (panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Inventory"))
-		{
-			if (_utilPanel == UtilPanelType.Inventory)
-			{
-				_utilPanel = UtilPanelType.CharSheet;	
-			}
-			else
-			{
-				_utilPanel = UtilPanelType.Inventory;	
-			}
-		}
-		if(GUI.Button (new Rect (2*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Skills"))
-		{
-			if (_utilPanel == UtilPanelType.Skills)
-			{
-				_utilPanel = UtilPanelType.CharSheet;	
-			}
-			else
-			{
-				_utilPanel = UtilPanelType.Skills;	
-			}
-		}
-		if(GUI.Button (new Rect (3*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Tactics"))
-		{
-			if (_utilPanel == UtilPanelType.Tactics)
-			{
-				_utilPanel = UtilPanelType.CharSheet;	
-			}
-			else
-			{
-				_utilPanel = UtilPanelType.Tactics;	
-			}
-		}
-		if(GUI.Button (new Rect (4*panelWidth/5, panelHeight/20, panelWidth/5, panelHeight/20), "Statistics"))
-		{
-			if (_utilPanel == UtilPanelType.Statistics)
-			{
-				_utilPanel = UtilPanelType.CharSheet;	
-			}
-			else
-			{
-				_utilPanel = UtilPanelType.Statistics;	
-			}
-		}
-	}
-
+ 
 	#endregion
 	
 	#region Utlity
