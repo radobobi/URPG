@@ -30,6 +30,7 @@ public enum Skill
 	Attack = 0,
 	Heal,
     Fireball,
+    Lightning,
 	LENGTH
 }
 
@@ -59,6 +60,13 @@ public class Goon : MonoBehaviour
         {
             _myPos = value;
         }
+    }
+
+    protected float _XP;
+    public float XP
+    {
+        get { return _XP; }
+        set { _XP = value; }
     }
 
     protected float[] _secondaryStats = new float[(int) SecondaryStatType.LENGTH];
@@ -130,11 +138,12 @@ public class Goon : MonoBehaviour
 		set{_skill_1 = value;}
 	}
 	
-	public void SetMainStats (string name, float HP, float[] secondaryStats)
+	public void SetMainStats (string name, float HP, float[] secondaryStats, float XP)
 	{
 		_myName = name;
 		_maxHP = HP;
 		_currentHP = _maxHP;
+        _XP = XP;
 		
 		for(int i=0; i< (int) SecondaryStatType.LENGTH; ++i)
 		{

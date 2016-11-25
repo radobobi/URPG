@@ -54,8 +54,9 @@ public class ControlsManager : MonoBehaviour {
 	public GameObject ItemsContainer;
 	
 	private GameMode _gameMode = GameMode.Town;
-	// CHARACTERS PANEL
-	private Hero[] _characters = new Hero[6];
+    // CHARACTERS PANEL
+    private static int _heroCount = 1;
+	private Hero[] _characters = new Hero[_heroCount];
 	
 	private int _selectedCharacter = -1;
 	
@@ -103,7 +104,7 @@ public class ControlsManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		//Initialize characters
-		for (int i=0; i<=5; ++i)
+		for (int i=0; i<= _heroCount-1; ++i)
 		{
 			_characters[i] = CharactersContainer.AddComponent<Hero>();
 			_characters[i].LoadHero(i);

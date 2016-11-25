@@ -8,13 +8,16 @@ public struct Enemy
 	private float[] _stats;
 	public float[] Stats{get{return _stats;}}
 	private float _HP;
-	public float HP{get{return _HP;}}
-	
-	public Enemy(string myName, float[] stats, float HP)
+	public float HP{get{return _HP;} }
+    private float _XP;
+    public float XP { get { return _XP; } }
+
+    public Enemy(string myName, float[] stats, float HP, float XP)
 	{
 		_myName = myName;
 		_stats = stats;
 		_HP = HP;
+        _XP = XP;
 	}
 }
 

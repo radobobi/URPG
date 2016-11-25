@@ -13,9 +13,31 @@ public enum TargetType
 
 public class ActiveEffect
 {
-    public ActiveEffect()
+    public ActiveEffect(Skill skillType)
     {
+        _skillType = skillType;
 
+        switch (_skillType)
+        {
+            case Skill.Fireball:
+                _size = 2f;
+                _ms = 100;
+                _pierceCoeff = 0f;
+                _collides = false;
+                _targetType = (int) TargetType.Unit;
+                _endDmg = new float[1] { 0f };
+                _dmgAOE = new float[1] { 0f };
+                break;
+            case Skill.Lightning:
+                _size = 1f;
+                _ms = 400;
+                _pierceCoeff = 0f;
+                _collides = false;
+                _targetType = (int)TargetType.Unit;
+                _endDmg = new float[1] { 0f };
+                _dmgAOE = new float[1] { 0f };
+                break;
+        }
     }
 
     protected Goon _source;
@@ -57,6 +79,19 @@ public class ActiveEffect
         set
         {
             _pierceCoeff = value;
+        }
+    }
+
+    protected float _chainTimes;
+    public float ChainTimes
+    {
+        get
+        {
+            return _chainTimes;
+        }
+        set
+        {
+            _chainTimes = value;
         }
     }
 
@@ -166,7 +201,7 @@ public class ActiveEffect
     }
 
     protected int _targetType;
-    public int TargetType
+    public int TargType
     {
         get
         {

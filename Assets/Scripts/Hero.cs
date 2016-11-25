@@ -70,19 +70,7 @@ public class Hero : Goon {
         {
             _level = value;
         }
-    }		
-	private int _xp;
-	public int XP
-    {
-        get
-        {
-            return _xp;
-        }
-        set
-        {
-            _xp = value;
-        }
-    }	
+    }
 	
 	private int[] _mainStatsBase = new int[(int) MainStatType.LENGTH];
 	
@@ -200,7 +188,7 @@ public class Hero : Goon {
 		//file.WriteLine(_magic.ToString());
 		
 		file.WriteLine(_level.ToString());
-		file.WriteLine(_xp.ToString());
+		file.WriteLine(_XP.ToString());
 		
 		//SaveSkills(file);
 		
@@ -226,7 +214,7 @@ public class Hero : Goon {
 			//_agility = int.Parse(file.ReadLine());
 			//_magic = int.Parse(file.ReadLine());
 			_level = int.Parse(file.ReadLine());
-			_xp = int.Parse(file.ReadLine());
+			_XP = float.Parse(file.ReadLine());
 		}
 		/*
 		else

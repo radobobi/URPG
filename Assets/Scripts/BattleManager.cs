@@ -23,7 +23,7 @@ public class BattleManager : MonoBehaviour {
     private int[] _goonActionsEnd;
 
     private int _round = 1;
-    private float _roundsPerSec = 100;
+    private float _roundsPerSec = 10;
     private float _slowMo = 1;
     private float _roundInterval;
 
@@ -176,6 +176,9 @@ public class BattleManager : MonoBehaviour {
                 case Skill.Fireball:
                     AdvanceFireball(anEffect);
                     break;
+                case Skill.Lightning:
+                    AdvanceLightning(anEffect);
+                    break;
             }
         }
 
@@ -194,7 +197,7 @@ public class BattleManager : MonoBehaviour {
         }
         else
         {
-            float dist = Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos) - aFB.Size - aFB.TargetUnit.GetStatSecondary(SecondaryStatType.size);
+            float dist = Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos) - aFB.TargetUnit.GetStatSecondary(SecondaryStatType.size);
             if (dist <= aFB.MoveSpeed/_slowMo)
             {
                 float ratio = dist / Vector3.Distance(aFB.Pos, aFB.TargetUnit.MyPos);
@@ -213,6 +216,71 @@ public class BattleManager : MonoBehaviour {
                 //print("Fireball moving from " + fbPos1 + " to " + aFB.Pos + " with a ratio of " + ratio);
             }
         }
+    }
+
+    private void AdvanceLightning(ActiveEffect aLN)
+    {
+        if (aLN.Collides)
+        {
+
+        }
+        else
+        {
+            float dist = Vector3.Distance(aLN.Pos, aLN.TargetUnit.MyPos) - aLN.TargetUnit.GetStatSecondary(SecondaryStatType.size);
+            if (dist <= aLN.MoveSpeed / _slowMo)
+            {
+                float ratio = dist / Vector3.Distance(aLN.Pos, aLN.TargetUnit.MyPos);
+                aLN.Pos = new Vector3(aLN.Pos.x + (aLN.TargetUnit.MyPos.x - aLN.Pos.x) * ratio, aLN.Pos.y + (aLN.TargetUnit.MyPos.y - aLN.Pos.y) * ratio, 0f);
+                Goon[] targetPool = aLN.Source is Hero ? _goons : _heroes;
+                //("Blowing up the fireball at " + aFB.Pos + " on turn " + _round);
+                ApplyAOEDamage(aLN.Pos, aLN.EndDamage, aLN.DamageAOE, aLN.HitUnits, targetPool, aLN.Source);
+                _effects.Remove(aLN);
+                if (aLN.ChainTimes > 0)
+                {
+                    ActiveEffect aNewLightning = new ActiveEffect(Skill.Lightning);
+                    aNewLightning.Source = aLN.Source;
+                    aNewLightning.TargetUnit = FindChainTarget(aLN, _goons);
+                    if (aNewLightning.TargetUnit != null)
+                    {
+                        _log = "\n" + aLN.Source.MyName + "'s lightning forks towards " + aLN.TargetUnit.MyName + _log;
+                        float hitStrength = aLN.Source.GetStatSecondary(SecondaryStatType.Damage) * 2;
+                        aNewLightning.EndDamage = new float[1] { hitStrength };
+                        aNewLightning.DamageAOE = new float[1] { 1f };
+                        aNewLightning.ChainTimes = aLN.ChainTimes - 1;
+                        _effects.Add(aNewLightning);
+                    }
+                    
+                }
+            }
+            else
+            {
+                float ms = aLN.MoveSpeed / _slowMo;
+                float ratio = ms / Vector3.Distance(aLN.Pos, aLN.TargetUnit.MyPos);
+                //Vector3 fbPos1 = aFB.Pos;
+                aLN.Pos = new Vector3(aLN.Pos.x + (aLN.TargetUnit.MyPos.x - aLN.Pos.x) * ratio, aLN.Pos.y + (aLN.TargetUnit.MyPos.y - aLN.Pos.y) * ratio, 0f);
+                //print("Fireball moving from " + fbPos1 + " to " + aFB.Pos + " with a ratio of " + ratio);
+            }
+        }
+    }
+
+    private Goon FindChainTarget(ActiveEffect aCE, Goon[] targPool)
+    {
+        Goon closestGoon = null;
+        float closestDist = 1000000f;
+        for (int i = 0; i < targPool.Length; i++)
+        {
+            Goon aGoon = targPool[i];
+            if (aCE.TargetUnit != aGoon && !aGoon.Dead)
+            {
+                float dist = Vector3.Distance(aCE.Pos, aGoon.MyPos);
+                if (dist < closestDist)
+                {
+                    closestDist = dist;
+                    closestGoon = aGoon;
+                }
+            }
+        }
+        return closestGoon;
     }
 
     private void ApplyAOEDamage(Vector3 blastPos, float[] damage, float[] blastRadius, List<Goon> hitUnits, Goon[] targetPool, Goon source)
@@ -240,6 +308,10 @@ public class BattleManager : MonoBehaviour {
                             + damage[j] + " damage. " + targetPool[i].CurrentHP + " HP left." + _log;
                         if (targetPool[i].Dead)
                         {
+                            if (!(targetPool[i] is Hero))
+                            {
+                                ApplyXPToHeroes(targetPool[i]);
+                            }
                             _log = "\n" + targetPool[i].MyName + " has died." + _log;
                         }
                         break;
@@ -276,6 +348,10 @@ public class BattleManager : MonoBehaviour {
                             + hitStrength + " damage. " + target.CurrentHP + " HP left." + _log;
                         if (target.Dead)
                         {
+                            if (!(target is Hero))
+                            {
+                                ApplyXPToHeroes(target);
+                            }
                             _log = "\n" + target.MyName + " has died." + _log;
                         }
                     }
@@ -308,18 +384,30 @@ public class BattleManager : MonoBehaviour {
                     {
                         _log = "\n" + acting.MyName + " casts a fireball towards " + target.MyName + _log;
                         float hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage)*2;
-                        ActiveEffect aFireball = new ActiveEffect();
+                        ActiveEffect aFireball = new ActiveEffect(Skill.Fireball);
                         aFireball.Source = acting;
-                        aFireball.TargetType = (int)TargetType.Unit;
                         aFireball.TargetUnit = target;
                         aFireball.EndDamage = new float[2] { hitStrength, hitStrength/2 };
-                        aFireball.PierceCoeff = 0f;
-                        aFireball.Collides = false;
                         aFireball.DamageAOE = new float[2] { 50f, 100f };
-                        aFireball.SkillType = Skill.Fireball;
-                        aFireball.Size = 2f;
-                        aFireball.MoveSpeed = 100;
                         _effects.Add(aFireball);
+                    }
+                    break;
+                case Skill.Lightning:
+                    if (acting.Dead)
+                    {
+
+                    }
+                    else
+                    {
+                        _log = "\n" + acting.MyName + " casts a lightning towards " + target.MyName + _log;
+                        float hitStrength = acting.GetStatSecondary(SecondaryStatType.Damage) * 2;
+                        ActiveEffect aLightning = new ActiveEffect(Skill.Lightning);
+                        aLightning.Source = acting;
+                        aLightning.TargetUnit = target;
+                        aLightning.EndDamage = new float[1] { hitStrength};
+                        aLightning.DamageAOE = new float[1] { 1f };
+                        aLightning.ChainTimes = 2;
+                        _effects.Add(aLightning);
                     }
                     break;
             }
@@ -329,8 +417,17 @@ public class BattleManager : MonoBehaviour {
             // Create an Error case
         }
     }
-	
-	private void ConductActionsHero(int whichHero)
+
+    private void ApplyXPToHeroes(Goon target)
+    {
+        for (int i=0; i<_heroes.Length; i++)
+        {
+            _heroes[i].XP += target.XP;
+            print("XP" + i + ": " + _heroes[i].XP);
+        }
+    }
+
+    private void ConductActionsHero(int whichHero)
     {
         Hero hero = _heroes[whichHero];
         // Reality check...
@@ -423,6 +520,29 @@ public class BattleManager : MonoBehaviour {
 
 
                 break;
+
+
+            case Skill.Lightning:
+
+                // choose target...
+                target = ChooseTargetToAttack(hero);
+                dist = Vector3.Distance(hero.MyPos, target.MyPos);
+                if (dist <= hero.GetStatSecondary(SecondaryStatType.range) * 1.5)
+                {
+                    turnsToAct = 35 - hero.GetStatBase(MainStatType.Agility);
+                    anAction = new Action(hero, target, Skill.Lightning, _round, _round + turnsToAct);
+                    _heroActions[whichHero] = anAction;
+                    _heroActionsEnd[whichHero] = _round + turnsToAct;
+                }
+                else
+                {
+                    float ms = hero.GetStatSecondary(SecondaryStatType.moveSpeed) / _slowMo;
+                    float ratio = Mathf.Min(ms, dist - hero.GetStatSecondary(SecondaryStatType.size) - target.GetStatSecondary(SecondaryStatType.size)) / dist;
+                    hero.MyPos = new Vector3(hero.MyPos.x + (target.MyPos.x - hero.MyPos.x) * ratio, hero.MyPos.y + (target.MyPos.y - hero.MyPos.y) * ratio, 0f);
+                }
+
+
+                break;
         }
     }
 
@@ -509,20 +629,6 @@ public class BattleManager : MonoBehaviour {
 		Goon[] targetPool = hero is Hero ? _goons : _heroes;
         
         target = SelectClosestEnemy(hero, targetPool);
-
-        /*switch(hero.TargetSelection)
-		{
-		case TacticsTargetSelection.Random_Target:
-			target = SelectRandomGoon(targetPool);
-			break;
-		case TacticsTargetSelection.Lowest_Current_HP:
-			target = FindLowestCurrentHPGoon(targetPool);
-			break;
-			
-		case TacticsTargetSelection.Lowest_Max_HP:
-			target = FindLowestMaxHPGoon(targetPool);
-			break;
-		}*/
         return target;
 	}
 
@@ -634,7 +740,7 @@ public class BattleManager : MonoBehaviour {
 				_goons[index] = _trashContainer.AddComponent<Goon>();	
 				float currentHP = current.HP;
 				_goons[index].SetMainStats(current.MyName+" "+j, 
-					currentHP+Random.Range(-currentHP/4,currentHP/4), current.Stats);
+					currentHP+Random.Range(-currentHP/4,currentHP/4), current.Stats, current.XP);
 				
 				++index;
 			}
